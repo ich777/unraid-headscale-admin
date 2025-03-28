@@ -1,0 +1,23 @@
+table {
+  width: 50%;
+  border-collapse: collapse;
+  margin: 25px 0;
+}
+
+th, td {
+  padding: 5px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.text-green {
+  color: green;
+}
+
+.text-yellow {
+  color: yellow;
+}
+
+.text-red {
+  color: red;
+}
