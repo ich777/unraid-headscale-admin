@@ -6,12 +6,12 @@
   <!ENTITY launch    "Settings/headscale-admin">
   <!ENTITY gitURL    "https://github.com/&author;/unraid-&name;/raw/master">
   <!ENTITY pluginURL "&gitURL;/&name;.plg">
-  <!ENTITY md5       "054db57e57115b5faf05e55266dde07f">
+  <!ENTITY md5       "4c9740f362a4863ac9b5365f782c4853">
   <!ENTITY plugin    "/boot/config/plugins/&name;">
   <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 ]>
 
-<PLUGIN  name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.0" icon="headscale.png">
+<PLUGIN  name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.0" icon="headscale.png" support="https://github.com/ich777/unraid-headscale-admin">
 
 <CHANGES>
 
