@@ -1,0 +1,14 @@
+Menu="headscale-admin:4"
+Title="Policies"
+Tag="file-text-o"
+---
+<?php
+if (isset($headscale_policies)) {
+  echo "<p><b>Defined Policies:</b></p>";
+  echo "<pre>";
+  echo $headscale_policies;
+  echo "</pre>";
+} else {
+  echo "<p><b>No Policies found!</b></p>";
+}
+?>

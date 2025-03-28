@@ -1,0 +1,380 @@
+Menu="headscale-admin:2"
+Title="Nodes"
+Tag="laptop"
+---
+<?php
+$nodes = json_decode($headscale_nodes, true);
+if (is_array($nodes)) {
+  echo "<table>";
+  echo "<tr>";
+  echo "<th>ID</th>";
+  echo "<th>Hostname</th>";
+  echo "<th>Name</th>";
+  echo "<th>Machine Key</th>";
+  echo "<th>Node Key</th>";
+  echo "<th>User</th>";
+  echo "<th>IP addresses</th>";
+  echo "<th>Valid Tags</th>";
+  echo "<th>Last Seen</th>";
+  echo "<th>Expiration</th>";
+  echo "<th>Epired</th>";
+  echo "<th>Connected</th>";
+  echo "<th>Expire Node</th>";
+  echo "<th>Delete Node</th>";
+  echo "</tr>";
+
+  foreach ($nodes as $item) {
+    echo "<tr>";
+    echo "<td>" . htmlspecialchars($item['id']) . "</td>";
+    echo "<td>" . htmlspecialchars($item['name']) . "</td>";
+    echo "<td>" . htmlspecialchars($item['given_name']) . "</td>";
+    echo "<td>[" . substr(str_replace("mkey:", "", htmlspecialchars($item['machine_key'])),  0, 5) . "...]</td>";
+    echo "<td>[" . substr(str_replace("nodekey:", "", htmlspecialchars($item['node_key'])),  0, 5) . "...]</td>";
+    echo "<td>" . htmlspecialchars($item['user']['name']) . "</td>";
+    echo "<td>";
+    foreach ($item["ip_addresses"] as $ip) {
+      echo $ip . "<br/>";
+    }
+    echo "</td>";
+    echo "<td>";
+    if (isset($item["valid_tags"]) && is_array($item["valid_tags"])) {
+      foreach ($item["valid_tags"] as $tag) {
+        if (!empty($tag)) {
+          echo htmlspecialchars($tag);
+        } else {
+          echo "-";
+        }
+      }
+    } else {
+      echo "-";
+    }
+    echo "</td>";
+    echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item["last_seen"]["seconds"])) . "</td>";
+    echo "<td class='" . ($item['expiration'] == 1 ? "text-yellow" : "") . "'>" . ($item['expiration'] == 1 ? date('Y-m-d H:i:s', htmlspecialchars($item['expiration']["seconds"])) : "N/A") . "</td>";
+    echo "<td class='";
+    if (isset($item['expiry']['seconds'])) {
+      $currentTime = time();
+      $expiryTime = $item['expiry']['seconds'];
+      if ($expiryTime > $currentTime) {
+        echo "text-green'>" . date('Y-m-d H:i:s', htmlspecialchars($expiryTime));
+      } elseif ($expiryTime < $currentTime) {
+        echo "text-red'>" . date('Y-m-d H:i:s', htmlspecialchars($expiryTime));
+      }
+    } else {
+      echo "text-green'>No";
+    }
+    echo "</td>";
+    echo "<td class='" . ($item['online'] == 1 ? "text-green" : "text-red") . "'>" . ($item['online'] == 1 ? "Connected" : "Offline") . "</td>";
+    echo "<td>
+      <form id='expire' method='POST'>
+      <input type='text' name='expire_node_id' value='" . htmlspecialchars($item['id']) . "' hidden>
+      <input type='text' name='expire_node_name' value='" . htmlspecialchars($item['name']) . "' hidden>
+      <input type='text' name='node' value='expire' hidden>
+      <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Expire' onclick='return expirenodeSWAL(event, this);'>
+      </form>
+      </td>";
+    echo "<td>
+      <form id='deletenode' method='POST'>
+      <input type='text' name='del_node_id' value='" . htmlspecialchars($item['id']) . "' hidden>
+      <input type='text' name='del_node_name' value='" . htmlspecialchars($item['name']) . "' hidden>
+      <input type='text' name='node' value='delete' hidden>
+      <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Delete' onclick='return deletenodeSWAL(event, this);'>
+      </form>
+      </td>";
+    echo "</tr>";
+  }
+  echo "</table>";
+} else {
+  echo "<p><b>No Nodes found!</b></p>";
+}
+?>
+
+<hr/>
+
+<?php
+if (is_array($users)) {
+?>
+<div>
+  <b>Register Node:</b>
+  <form id="registernode" method="POST">
+  <?php
+    echo "<select name='nodeuser' id='nodeuser'>";
+    foreach ($users as $item) {
+      echo "<option value='" . htmlspecialchars($item['name']) . "'>" . htmlspecialchars($item['name']) . "</option>";
+    }
+    echo "</select>";
+  ?>
+  <input type="text" name="regkey" pattern="[A-Za-z0-9 \-_.]{2,50}" id="regkey" placeholder="Please enter the registration key" required>
+  <input type="text" name="node" value="register" hidden>
+  <input type="submit" value="Create" onclick="return registernodeSWAL(event);">
+  </form>
+</div>
+<?php
+} else {
+  echo "<p><b>No user found, please create a user first to be able to register a node!</b></p>";
+}
+?>
+
+<hr/>
+
+<?php
+if (is_array($nodes)) {
+?>
+<div>
+  <b>Rename Node:</b>
+  <form id="registernode" method="POST">
+  <?php
+    echo "<select name='nodeidname' id='nodeidname'>";
+    foreach ($nodes as $item) {
+      echo "<option value='" . htmlspecialchars($item['id']) . "|" . htmlspecialchars($item['given_name']) . "'>" . htmlspecialchars($item['given_name']) . "</option>";
+    }
+    echo "</select>";
+  ?>
+  <input type="text" name="newnodename" pattern="[A-Za-z0-9 \-_.]{2,50}" id="newnodename" placeholder="Please enter the new node name" required>
+  <input type="text" name="node" value="rename" hidden>
+  <input type="submit" value="Rename" onclick="return renamenodeSWAL(event, this);">
+  </form>
+</div>
+
+<hr/>
+
+<div>
+  <b>Add Tag to Node:</b>
+  <form id="addtagtonode" method="POST">
+  <?php
+    echo "<select name='nodeidname' id='nodeidname'>";
+    foreach ($nodes as $item) {
+      echo "<option value='" . htmlspecialchars($item['id']) . "|" . htmlspecialchars($item['given_name']) . "'>" . htmlspecialchars($item['given_name']) . "</option>";
+    }
+    echo "</select>";
+  ?>
+  <input type="text" name="nodetag" pattern="tag:[A-Za-z0-9 \-_.:]{2,50}" id="nodetag" placeholder="tag:" required>
+  <input type="text" name="node" value="addtag" hidden>
+  <input type="submit" value="Add" onclick="return nodeaddtagSWAL(event, this);">
+  </form>
+</div>
+
+<hr/>
+
+<div>
+  <b>Move Node:</b>
+  <form id="movenode" method="POST">
+  <?php
+    echo "<select name='nodeidname' id='nodeidname'>";
+    foreach ($nodes as $item) {
+      echo "<option value='" . htmlspecialchars($item['id']) . "|" . htmlspecialchars($item['given_name']) . "'>" . htmlspecialchars($item['given_name']) . "</option>";
+    }
+    echo "</select>";
+  ?>
+  <?php
+    echo "<select name='newnodeuser' id='newnodeuser'>";
+    foreach ($users as $item) {
+      echo "<option value='" . htmlspecialchars($item['name']) . "'>" . htmlspecialchars($item['name']) . "</option>";
+    }
+    echo "</select>";
+  ?>
+  <input type="text" name="node" value="move" hidden>
+  <input type="submit" value="Move" onclick="return movenodeSWAL(event, this);">
+  </form>
+</div>
+<?php
+} else {
+  echo "<p><b>No nodes found, please register a node first to be able to do Node operations!</b></p>";
+}
+?>
+
+<script>
+function registernodeSWAL(event) {
+  event.preventDefault();
+  var nodeuser = document.getElementById('nodeuser').value;
+  var regkey = document.getElementById('regkey').value;
+
+  if(regkey === '') {
+    swal('ERROR', 'Registration Key empty', 'error');
+    return false;
+  }
+
+  swal({
+    title: "Confirm Registration",
+    text: "Registration user: \"" + nodeuser + "\"\nRegistration Key: \"" + regkey + "\"",
+    type: 'warning',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: "<?=_('Cancel')?>",
+    confirmButtonText: "<?=_('Register')?>"
+  },function(isConfirm) {
+    if ( isConfirm ) {
+      document.getElementById('registernode').submit();
+    }
+  });
+}
+
+function renamenodeSWAL(event, button) {
+  event.preventDefault();
+  const formElement = button.closest('form');
+  let nodeidname = formElement.querySelector('select[name="nodeidname"]').value;
+  let newnodename = formElement.querySelector('input[name="newnodename"]').value;
+
+  if(newnodename === '') {
+    swal('ERROR', 'New Node name empty', 'error');
+    return false;
+  }
+
+  newnodename = newnodename.replace(/[^a-zA-Z0-9-_. ]/g, '').replace(/ /g, '_');
+
+  let parts = nodeidname.split('|');
+  let oldnodename = parts[1];
+
+  swal({
+    title: "Confirm Renaming Node",
+    text: "Are you sure you want to rename Node: \"" + oldnodename + "\" to: \"" + newnodename + "\"",
+    type: 'warning',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: "<?=_('Cancel')?>",
+    confirmButtonText: "<?=_('Rename')?>"
+  },function(isConfirm) {
+    if ( isConfirm ) {
+      formElement.submit();
+    }
+  });
+}
+
+function nodeaddtagSWAL(event, button) {
+  event.preventDefault();
+  const formElement = button.closest('form');
+  let nodeidname = formElement.querySelector('select[name="nodeidname"]').value;
+  let nodetag = formElement.querySelector('input[name="nodetag"]').value;
+
+  if (!nodetag.startsWith("tag:")) {
+    swal('ERROR', 'Tag needs to start with: "tag:"', 'error');
+    return false;
+  }
+
+  nodetag = nodetag.replace(/[^a-zA-Z0-9-_.: ]/g, '').replace(/ /g, '_');
+
+  let parts = nodeidname.split('|');
+  let nodename = parts[1];
+
+  swal({
+    title: "Add Tag to Node",
+    text: "Are you sure you want add the Tag: \"" + nodetag + "\" to Node: \"" + nodename + "\"",
+    type: 'warning',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: "<?=_('Cancel')?>",
+    confirmButtonText: "<?=_('Add')?>"
+  },function(isConfirm) {
+    if ( isConfirm ) {
+      formElement.submit();
+    }
+  });
+}
+
+function movenodeSWAL(event, button) {
+  event.preventDefault();
+  const formElement = button.closest('form');
+  let nodeidname = formElement.querySelector('select[name="nodeidname"]').value;
+  let newnodeuser = formElement.querySelector('select[name="newnodeuser"]').value;
+
+  let parts = nodeidname.split('|');
+  let nodename = parts[1];
+
+  swal({
+    title: "Move Node",
+    text: "Are you sure you want to move Node: \"" + nodename + "\" to user: \"" + newnodeuser + "\"",
+    type: 'warning',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: "<?=_('Cancel')?>",
+    confirmButtonText: "<?=_('Move')?>"
+  },function(isConfirm) {
+    if ( isConfirm ) {
+      formElement.submit();
+    }
+  });
+}
+
+function expirenodeSWAL(event, button) {
+  event.preventDefault();
+  const formElement = button.closest('form');
+  let expire_node_name = formElement.querySelector('input[name="expire_node_name"]').value;
+
+  swal({
+    title: "Confirm Expiry",
+    text: "Are you sure you want to expire Node: \"" + expire_node_name + "\"",
+    type: 'warning',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: "<?=_('Cancel')?>",
+    confirmButtonText: "<?=_('Expire')?>"
+  },function(isConfirm) {
+    if ( isConfirm ) {
+      formElement.submit();
+    }
+  });
+}
+
+function deletenodeSWAL(event, button) {
+  event.preventDefault();
+  const formElement = button.closest('form');
+  let del_node_name = formElement.querySelector('input[name="del_node_name"]').value;
+
+  swal({
+    title: "Confrim Node Deletion",
+    text: "Are you sure you want to delete the Node: \"" + del_node_name + "\"",
+    type: 'warning',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: "<?=_('Cancel')?>",
+    confirmButtonText: "<?=_('Delete')?>"
+  },function(isConfirm) {
+    if ( isConfirm ) {
+      formElement.submit();
+    }
+  });
+}
+</script>
+
+<?php
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if ($_POST['node'] === 'register') {
+    if (isset($_POST['nodeuser'])) {
+      shell_exec($headscale_exec . "nodes register --user " . escapeshellarg($_POST['nodeuser']) . " --key " . escapeshellarg($_POST['regkey']));
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  } elseif ($_POST['node'] === 'rename') {
+    if (isset($_POST['newnodename'])) {
+      list($nodeid, $nodename) = explode('|', $_POST['nodeidname']);
+      $newnodename = preg_replace('/[^a-zA-Z0-9-_. ]/', '', $_POST['newnodename']);
+      $newnodename = str_replace(' ', '_', $newnodename);
+      shell_exec($headscale_exec . "nodes rename --force --identifier ". escapeshellarg($nodeid) . " " . escapeshellarg($newnodename));
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  } elseif ($_POST['node'] === 'addtag') {
+    if (isset($_POST['nodetag'])) {
+      list($nodeid, $nodename) = explode('|', $_POST['nodeidname']);
+      $nodetag = preg_replace('/[^a-zA-Z0-9-_. ]/', '', $_POST['nodetag']);
+      $nodetag = str_replace(' ', '_', $nodetag);
+      shell_exec($headscale_exec . "nodes tag --force --identifier ". escapeshellarg($nodeid) . " --tags " . escapeshellarg($nodetag));
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  } elseif ($_POST['node'] === 'move') {
+    if (isset($_POST['newnodeuser'])) {
+      list($nodeid, $nodename) = explode('|', $_POST['nodeidname']);
+      shell_exec($headscale_exec . "nodes move --force --identifier ". escapeshellarg($nodeid) . " --user " . escapeshellarg($_POST['newnodeuser']));
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  } elseif ($_POST['node'] === 'expire') {
+    if (isset($_POST['expire_node_id'])) {
+      shell_exec($headscale_exec . "nodes expire --force --identifier ". escapeshellarg($_POST['expire_node_id']));
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  } elseif ($_POST['node'] === 'delete') {
+    if (isset($_POST['del_node_id'])) {
+      shell_exec($headscale_exec . "nodes delete --force --identifier ". escapeshellarg($_POST['del_node_id']));
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  }
+}
+?>

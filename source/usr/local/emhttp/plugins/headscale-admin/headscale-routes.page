@@ -1,0 +1,146 @@
+Menu="headscale-admin:3"
+Title="Routes"
+Tag="exchange"
+---
+<?php
+$routes = json_decode($headscale_routes, true);
+if (is_array($routes)) {
+  echo "<table>";
+  echo "<tr>";
+  echo "<th>ID</th>";
+  echo "<th>Name</th>";
+  echo "<th>Prefix</th>";
+  echo "<th>Advertised</th>";
+  echo "<th>Enabled</th>";
+  echo "<th>Primary</th>";
+  echo "<th>Created</th>";
+  echo "<th>Updated</th>";
+  echo "<th>Enable/Disable</th>";
+  echo "<th>Delete</th>";
+  echo "</tr>";
+
+  foreach ($routes as $item) {
+    echo "<tr>";
+    echo "<td>" . htmlspecialchars($item['id']) . "</td>";
+    echo "<td>" . htmlspecialchars($item['node']['name']) . "</td>";
+    echo "<td>" . htmlspecialchars($item['prefix']) . "</td>";
+    echo "<td>" . ($item['advertised'] == 1 ? "true" : "false") . "</td>";
+    echo "<td class='" . ($item['enabled'] == 1 ? "text-green" : "text-red") . "'>" . ($item['enabled'] == 1 ? "true" : "false") . "</td>";
+    echo "<td>" . ($item['primary'] == 1 ? "true" : "-") . "</td>";
+    echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['created_at']['seconds'])) . "</td>";
+    echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['updated_at']['seconds'])) . "</td>";
+    echo "<td>";
+    if ($item['enabled'] == 1) {
+      echo "<form id='disable' method='POST'>
+      <input type='text' name='disable_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
+      <input type='text' name='disable_route_name' value='" . htmlspecialchars($item['node']['name']) . "' hidden>
+      <input type='text' name='route' value='disable' hidden>
+      <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Disable' onclick='return disablerouteSWAL(event, this);'>
+      </form>";
+    } else {
+      echo "<form id='enable' method='POST'>
+      <input type='text' name='enable_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
+      <input type='text' name='enable_route_name' value='" . htmlspecialchars($item['node']['name']) . "' hidden>
+      <input type='text' name='route' value='enable' hidden>
+      <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Enable' onclick='return enablerouteSWAL(event, this);'>
+      </form>";
+    }
+    echo "</td>";
+    echo "<td>
+    <form id='deleteroute' method='POST'>
+      <input type='text' name='del_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
+      <input type='text' name='del_route_name' value='" . htmlspecialchars($item['node']['name']) . "' hidden>
+      <input type='text' name='route' value='delete' hidden>
+      <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Delete' onclick='return deleterouteSWAL(event, this);'>
+    </form>
+    </td>";
+    echo "</tr>";
+  }
+  echo "</table>";
+} else {
+  echo "<p><b>No Routes found!</b></p>";
+}
+?>
+
+<script>
+function enablerouteSWAL(event, button) {
+  event.preventDefault();
+  const formElement = button.closest('form');
+  let enable_route_name = formElement.querySelector('input[name="enable_route_name"]').value;
+
+  swal({
+    title: "Confrim Enabling Route",
+    text: "Are you sure you want to enable the Route: \"" + enable_route_name + "\"",
+    type: 'warning',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: "<?=_('Cancel')?>",
+    confirmButtonText: "<?=_('Enable')?>"
+  },function(isConfirm) {
+    if ( isConfirm ) {
+      formElement.submit();
+    }
+  });
+}
+
+function disablerouteSWAL(event, button) {
+  event.preventDefault();
+  const formElement = button.closest('form');
+  let disable_route_name = formElement.querySelector('input[name="disable_route_name"]').value;
+
+  swal({
+    title: "Confrim Disabling Route",
+    text: "Are you sure you want to disable the Route: \"" + disable_route_name + "\"",
+    type: 'warning',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: "<?=_('Cancel')?>",
+    confirmButtonText: "<?=_('Disable')?>"
+  },function(isConfirm) {
+    if ( isConfirm ) {
+      formElement.submit();
+    }
+  });
+}
+
+function deleterouteSWAL(event, button) {
+  event.preventDefault();
+  const formElement = button.closest('form');
+  let del_route_name = formElement.querySelector('input[name="del_route_name"]').value;
+
+  swal({
+    title: "Confrim Route Deletion",
+    text: "Are you sure you want to delete the Route: \"" + del_route_name + "\"",
+    type: 'warning',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: "<?=_('Cancel')?>",
+    confirmButtonText: "<?=_('Delete')?>"
+  },function(isConfirm) {
+    if ( isConfirm ) {
+      formElement.submit();
+    }
+  });
+}
+</script>
+
+<?php
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if ($_POST['route'] === 'enable') {
+    if (isset($_POST['enable_route_id'])) {
+      shell_exec($headscale_exec . "routes enable --force --route " . escapeshellarg($_POST['enable_route_id']));
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  } elseif ($_POST['route'] === 'disable') {
+    if (isset($_POST['disable_route_id'])) {
+      shell_exec($headscale_exec . "routes disable --force --route " . escapeshellarg($_POST['disable_route_id']));
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  } elseif ($_POST['route'] === 'delete') {
+    if (isset($_POST['del_route_id'])) {
+      shell_exec($headscale_exec . "routes delete --force --route ". escapeshellarg($_POST['del_route_id']));
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  }
+}
+?>

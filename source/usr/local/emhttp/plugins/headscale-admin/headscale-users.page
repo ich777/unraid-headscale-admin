@@ -1,0 +1,218 @@
+Menu="headscale-admin:1"
+Title="Users"
+Tag="users"
+---
+<link rel="stylesheet" href="<?autov('/plugins/headscale-admin/style/style.css')?>">
+<script src="<?autov('/webGui/javascript/jquery.switchbutton.js')?>"></script>
+
+<script>
+  //Don't execute commands again if page is refreshed
+  if ( window.history.replaceState ) {
+    window.history.replaceState( null, null, window.location.href );
+  }
+</script>
+
+<?php
+$started = $var['fsState'];
+if (trim($started ) !== 'Started') {
+  echo "<h3 style='text-align: center;'>Please start the Array!</h3>";
+  exit();
+}
+
+$plugin_settings = parse_ini_file('/boot/config/plugins/headscale-admin/settings.cfg');
+$headscale_container_name = $plugin_settings['CONTAINER_NAME'];
+if (!$plugin_settings['CONTAINER_NAME']) {
+  echo "<b>No Headscale Containername specified, please set the container name:</b>";
+  echo "<form method='POST'>";
+  echo "<input type='text' name='containername' id='containername' pattern='[A-Za-z0-9 \-_.]{2,50}' placeholder='headscale' required>";
+  echo "<button type='submit'>Set</button>";
+  echo "</form>";
+
+  if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    shell_exec('sed -i "/^CONTAINER_NAME=/c\\CONTAINER_NAME=' . htmlspecialchars($_POST['containername']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
+    echo '<script>parent.window.location.reload();</script>';
+  }
+}
+$headscale_cmd = "docker exec " .$headscale_container_name . " headscale -o json ";
+$headscale_exec = "docker exec " .$headscale_container_name . " headscale ";
+$headscale_users = shell_exec($headscale_cmd . "users list");
+$headscale_nodes = shell_exec($headscale_cmd . "nodes list");
+$headscale_routes = shell_exec($headscale_cmd . "routes list");
+$headscale_policies = shell_exec($headscale_cmd . "policy get");
+?>
+
+<?php
+$users = json_decode($headscale_users, true);
+if (is_array($users)) {
+  echo "<table>";
+  echo "<tr>";
+  echo "<th>ID</th>";
+  echo "<th>Name</th>";
+  echo "<th>Created</th>";
+  echo "<th>Delete User</th>";
+  echo "</tr>";
+
+  foreach ($users as $item) {
+    echo "<tr>";
+    echo "<td>" . htmlspecialchars($item['id']) . "</td>";
+    echo "<td>" . htmlspecialchars($item['name']) . "</td>";
+    echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['created_at']['seconds'])) . "</td>";
+    echo "<td>
+      <form id='deleteuser' method='POST'>
+      <input type='text' name='del_username' value='" . htmlspecialchars($item['name']) . "' hidden>
+      <input type='text' name='user' value='delete' hidden>
+      <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Delete' onclick='return deleteSWAL(event, this);'>
+      </form>
+      </td>";
+    echo "</tr>";
+  }
+  echo "</table>";
+
+  echo "<hr/>";
+
+  echo "<div>";
+  echo "<b>Create User:</b>";
+  echo "<form id='createuser' method='POST'>";
+  echo "<input type='text' name='username' pattern='[A-Za-z0-9 \-_.]{2,50}' id='username' placeholder='Please enter a Username' required>";
+  echo "<input type='text' name='user' value='create' hidden>";
+  echo "<input type='submit' value='Create' onclick='return createSWAL(event);'>";
+  echo "</form>";
+  echo "</div>";
+
+  echo "<hr/>";
+
+  echo "<div>";
+  echo "<b>Rename User:</b>";
+  echo "<form id='renameuser' method='POST'>";
+  echo "<select name='useridname' id='useridname'>";
+  foreach ($users as $item) {
+    echo "<option value='" . htmlspecialchars($item['id']) . "|" . htmlspecialchars($item['name']) . "'>" . htmlspecialchars($item['name']) . "</option>";
+  }
+  echo "</select>";
+  echo "<input type='text' name='newusername' pattern='[A-Za-z0-9 \-_.]{2,50}' id='newusername' placeholder='Please enter the new user name' required>";
+  echo "<input type='text' name='user' value='rename' hidden>";
+  echo "<input type='submit' value='Rename' onclick='return renameuserSWAL(event, this);'>";
+  echo "</form>";
+  echo "</div>";
+} else {
+  $plugin_settings = parse_ini_file('/boot/config/plugins/headscale-admin/settings.cfg');
+  $headscale_container_name = $plugin_settings['CONTAINER_NAME'];
+  echo "<b>Please double check the specified Headscale container name and make sure the container is running:</b>";
+  echo "<form method='POST'>";
+  echo "<input type='text' name='containername' id='containername' pattern='[A-Za-z0-9 \-_.]{2,50}' placeholder='headscale' value='" . $headscale_container_name . "' required>";
+  echo "<button type='submit'>Set</button>";
+  echo "</form>";
+
+  if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    shell_exec('sed -i "/^CONTAINER_NAME=/c\\CONTAINER_NAME=' . htmlspecialchars($_POST['containername']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
+    echo '<script>parent.window.location.reload();</script>';
+  }
+}
+?>
+
+
+
+<script>
+function createSWAL(event) {
+  event.preventDefault();
+  var username = document.getElementById('username').value;
+
+  if(username === '') {
+    swal('ERROR', 'Username empty', 'error');
+    return false;
+  }
+
+  username = username.replace(/[^a-zA-Z0-9-_. ]/g, '').replace(/ /g, '_');
+
+  swal({
+    title: "Confirm User Creation",
+    text: "Are you sure you want to create the User: \"" + username + "\"",
+    type: 'warning',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: "<?=_('Cancel')?>",
+    confirmButtonText: "<?=_('Create')?>"
+  },function(isConfirm) {
+    if ( isConfirm ) {
+      document.getElementById('createuser').submit();
+    }
+  });
+}
+
+function renameuserSWAL(event, button) {
+  event.preventDefault();
+  const formElement = button.closest('form');
+  let useridname = formElement.querySelector('select[name="useridname"]').value;
+  let newusername = formElement.querySelector('input[name="newusername"]').value;
+
+  if(newusername === '') {
+    swal('ERROR', 'New User name empty', 'error');
+    return false;
+  }
+
+  newusername = newusername.replace(/[^a-zA-Z0-9-_. ]/g, '').replace(/ /g, '_');
+
+  let parts = useridname.split('|');
+  let oldusername = parts[1];
+
+  swal({
+    title: "Confirm Renaming User",
+    text: "Are you sure you want to rename User: \"" + oldusername + "\" to: \"" + newusername + "\"",
+    type: 'warning',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: "<?=_('Cancel')?>",
+    confirmButtonText: "<?=_('Rename')?>"
+  },function(isConfirm) {
+    if ( isConfirm ) {
+      formElement.submit();
+    }
+  });
+}
+
+function deleteSWAL(event, button) {
+  event.preventDefault();
+  const formElement = button.closest('form');
+  let del_username = formElement.querySelector('input[name="del_username"]').value;
+
+  swal({
+    title: "Confirm User Deletion",
+    text: "Are you sure you want to delete the User: \"" + del_username + "\"",
+    type: 'warning',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: "<?=_('Cancel')?>",
+    confirmButtonText: "<?=_('Delete')?>"
+  },function(isConfirm) {
+    if ( isConfirm ) {
+      formElement.submit();
+    }
+  });
+}
+</script>
+
+<?php
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if ($_POST['user'] === 'create') {
+    if (isset($_POST['username'])) {
+      $username = preg_replace('/[^a-zA-Z0-9-_. ]/', '', $_POST['username']);
+      $username = str_replace(' ', '_', $username);
+      shell_exec($headscale_exec . "users create " . escapeshellarg($username));
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  } elseif ($_POST['user'] === 'rename') {
+    if (isset($_POST['newusername'])) {
+      list($nodeid, $nodename) = explode('|', $_POST['useridname']);
+      $newusername = preg_replace('/[^a-zA-Z0-9-_. ]/', '', $_POST['newusername']);
+      $newusername = str_replace(' ', '_', $newusername);
+      shell_exec($headscale_exec . "users rename --force --identifier ". escapeshellarg($nodeid) . " --new-name " . escapeshellarg($newusername));
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  } elseif ($_POST['user'] === 'delete') {
+    if (isset($_POST['del_username'])) {
+      shell_exec($headscale_exec . "users destroy --force --name ". escapeshellarg($_POST['del_username']));
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  }
+}
+?>
