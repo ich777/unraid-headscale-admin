@@ -1,0 +1,84 @@
+<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN [
+  <!ENTITY name      "headscale-admin">
+  <!ENTITY author    "ich777">
+  <!ENTITY version   "2025.03.28">
+  <!ENTITY launch    "Settings/headscale-admin">
+  <!ENTITY gitURL    "https://git.minenet.at/&author;/unraid-&name;/raw/branch/master">
+  <!ENTITY pluginURL "&gitURL;/&name;.plg">
+  <!ENTITY md5       "054db57e57115b5faf05e55266dde07f">
+  <!ENTITY plugin    "/boot/config/plugins/&name;">
+  <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
+]>
+
+<PLUGIN  name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.0" icon="headscale.png">
+
+<CHANGES>
+
+###2025.03.28
+- Initial Release
+
+</CHANGES>
+
+<FILE Run="/bin/bash">
+<INLINE>
+rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2>/dev/null|grep -v '&version;')
+</INLINE>
+</FILE>
+
+<FILE Name="/boot/config/plugins/&name;/&name;-&version;.txz" Run="upgradepkg --install-new">
+<URL>&gitURL;/packages/&name;-&version;.txz</URL>
+<MD5>&md5;</MD5>
+</FILE>
+
+<FILE Name="&emhttp;/README.md">
+<INLINE>
+**Headscale Administration Panel**
+
+This plugin is a simple Administration Panel for Headscale
+
+ATTENTION: This plugin is designed to be used with the Headscale Docker container on Unraid
+</INLINE>
+</FILE>
+
+<FILE Run="/bin/bash">
+<INLINE>
+
+#Create settings file if not found and try to get Headscale container name
+if [ ! -f "&plugin;/settings.cfg" ]; then
+  echo 'CONTAINER_NAME=' > "&plugin;/settings.cfg"
+
+  echo
+  echo "Trying to determine Headscale container name"
+  CONTAINERNAME="$(docker ps -a --format "{{.Names}}" 2&gt;/dev/null | grep -i "^headscale$")"
+  if [ -z "${CONTAINERNAME}" ]; then
+    echo "Couldn't determine Container name from Headscale"
+    echo "Please go to the plugin page and configure the container name manually!"
+  else
+    echo "Setting Headscale Container name to: ${CONTAINERNAME}"
+    sed -i "/^CONTAINER_NAME=/c\\CONTAINER_NAME=${CONTAINERNAME}" "&plugin;/settings.cfg"
+  fi
+  echo
+fi
+
+</INLINE>
+</FILE>
+
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+
+echo "-----------------------------------------------"
+echo "---Uninstalling Headscale Admin Panel plugin---"
+echo "-----------------------------------------------"
+# Remove plugin related files
+removepkg &name;-&version;
+rm -rf /usr/local/emhttp/plugins/&name; &plugin;
+echo
+echo "------------------------------------------------------"
+echo "------Headscale Admin Panel plugin uninstalled!-------"
+echo "------------------------------------------------------"
+echo
+
+</INLINE>
+</FILE>
+</PLUGIN>
