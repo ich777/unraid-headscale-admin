@@ -4,7 +4,7 @@
   <!ENTITY author    "ich777">
   <!ENTITY version   "2025.03.28">
   <!ENTITY launch    "Settings/headscale-admin">
-  <!ENTITY gitURL    "https://git.minenet.at/&author;/unraid-&name;/raw/branch/master">
+  <!ENTITY gitURL    "https://github.com/&author;/unraid-&name;/raw/master">
   <!ENTITY pluginURL "&gitURL;/&name;.plg">
   <!ENTITY md5       "054db57e57115b5faf05e55266dde07f">
   <!ENTITY plugin    "/boot/config/plugins/&name;">
