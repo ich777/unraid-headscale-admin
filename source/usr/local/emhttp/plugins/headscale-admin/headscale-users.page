@@ -20,25 +20,147 @@ if (trim($started ) !== 'Started') {
 }
 
 $plugin_settings = parse_ini_file('/boot/config/plugins/headscale-admin/settings.cfg');
-$headscale_container_name = $plugin_settings['CONTAINER_NAME'];
-if (!$plugin_settings['CONTAINER_NAME']) {
-  echo "<b>No Headscale Containername specified, please set the container name:</b>";
-  echo "<form method='POST'>";
-  echo "<input type='text' name='containername' id='containername' pattern='[A-Za-z0-9 \-_.]{2,50}' placeholder='headscale' required>";
-  echo "<button type='submit'>Set</button>";
-  echo "</form>";
+if ($plugin_settings['METHOD'] == 'local') {
+  $headscale_container_name = $plugin_settings['CONTAINER_NAME'];
+  if (!$plugin_settings['CONTAINER_NAME']) {
+    echo "<b>No Headscale Containername specified, please set the container name:</b>";
+    echo "<form method='POST'>";
+    echo "<input type='text' name='containername' id='containername' pattern='[A-Za-z0-9 \-_.]{2,50}' placeholder='headscale' required>";
+    echo "<button type='submit'>Set</button>";
+    echo "</form>";
 
-  if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    shell_exec('sed -i "/^CONTAINER_NAME=/c\\CONTAINER_NAME=' . htmlspecialchars($_POST['containername']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
-    echo '<script>parent.window.location.reload();</script>';
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+      shell_exec('sed -i "/^CONTAINER_NAME=/c\\CONTAINER_NAME=' . htmlspecialchars($_POST['containername']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
+      echo '<script>parent.window.location.reload();</script>';
+    }
   }
+  $headscale_cmd = "docker exec \"" .$headscale_container_name . "\" headscale -o json ";
+  $headscale_exec = "docker exec \"" .$headscale_container_name . "\" headscale ";
+  $headscale_users = shell_exec($headscale_cmd . "users list");
+  $headscale_nodes = shell_exec($headscale_cmd . "nodes list");
+  $headscale_routes = shell_exec($headscale_cmd . "routes list");
+  $headscale_policies = shell_exec($headscale_cmd . "policy get");
+} elseif ($plugin_settings['METHOD'] == 'api') {
+  $headscale_url = $plugin_settings['URL'] . "/api/v1";
+  $headscale_apikey = $plugin_settings['API_KEY'];
+  $headscale_endpoints = [ "user", "node", "routes", "policy"];
+
+  $curl_opts = [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+      'Authorization: Bearer ' . $headscale_apikey,
+      'Content-Type: application/json'
+    ]
+  ];
+
+  foreach ($headscale_endpoints as $endpoint) {
+    $ch = curl_init();
+    $full_url = $headscale_url . "/" . $endpoint;
+    curl_setopt($ch, CURLOPT_URL, $full_url);
+    curl_setopt_array($ch, $curl_opts);
+    if ($endpoint == 'user') {
+      $headscale_users_response = json_decode(curl_exec($ch), true);
+    } elseif ($endpoint == 'node') {
+      $headscale_nodes_response = json_decode(curl_exec($ch), true);
+    } elseif ($endpoint == 'routes') {
+      $headscale_routes_response = json_decode(curl_exec($ch), true);
+    } elseif ($endpoint == 'policy') {
+      $headscale_policies_response = json_decode(curl_exec($ch), true);
+    }
+    curl_close($ch);
+  }
+
+  function convertToSeconds($isoDate) {
+    $dateTime = new DateTime($isoDate);
+    $timestamp = $dateTime->getTimestamp();
+    return [
+      "seconds" => $timestamp,
+    ];
+  }
+
+  foreach ($headscale_users_response['users'] as $user) {
+    $dateTime = new DateTime($isoDate);
+    $timestamp = $dateTime->getTimestamp();
+    $normalizedUser = [
+      "id" => (int) $user["id"],
+      "name" => $user["name"],
+      "created_at" => convertToSeconds($user["createdAt"])
+    ];
+    $headscale_users[] = $normalizedUser;
+  }
+  $headscale_users = json_encode($headscale_users, JSON_PRETTY_PRINT);
+
+
+  foreach ($headscale_nodes_response['nodes'] as $node) {
+    $normalizedNode = [
+      "id" => (int)$node["id"],
+      "machine_key" => $node["machineKey"],
+      "node_key" => $node["nodeKey"],
+      "disco_key" => $node["discoKey"],
+      "ip_addresses" => $node["ipAddresses"],
+      "name" => $node["name"],
+      "user" => [
+        "id" => (int)$node["user"]["id"],
+        "name" => $node["user"]["name"],
+        "created_at" => convertToSeconds($node["user"]["createdAt"])
+      ],
+      "last_seen" => convertToSeconds($node["lastSeen"]),
+      "created_at" => convertToSeconds($node["createdAt"]),
+      "expiry" => isset($node['expiry']) ? convertToSeconds($node['expiry']) : null,
+      "valid_tags" => isset($node['validTags']) ? $node['validTags'] : null,
+      "given_name" => $node["givenName"],
+      "online" => $node["online"]
+    ];
+    $headscale_nodes[] = $normalizedNode;
+  }
+  $headscale_nodes =  json_encode($headscale_nodes, JSON_PRETTY_PRINT);
+
+  foreach ($headscale_routes_response['routes'] as $route) {
+  $normalizedRoute = [
+    "id" => (int)$route["id"],
+    "node" => [
+      "id" => (int)$route["node"]["id"],
+      "machine_key" => $route["node"]["machineKey"],
+      "node_key" => $route["node"]["nodeKey"],
+      "disco_key" => $route["node"]["discoKey"],
+      "ip_addresses" => $route["node"]["ipAddresses"],
+      "name" => $route["node"]["name"],
+      "user" => [
+        "id" => (int)$route["node"]["user"]["id"],
+        "name" => $route["node"]["user"]["name"],
+        "created_at" => convertToSeconds($route["node"]["user"]["createdAt"])
+      ],
+      "last_seen" => convertToSeconds($route["node"]["lastSeen"]),
+      "created_at" => convertToSeconds($route["node"]["createdAt"]),
+      "given_name" => $route["node"]["givenName"],
+    ],
+    "prefix" => $route["prefix"],
+    "advertised" => $route["advertised"],
+    "enabled" => $route["enabled"],
+    "created_at" => convertToSeconds($route["createdAt"]),
+    "updated_at" => convertToSeconds($route["updatedAt"])
+  ];
+  $headscale_routes[] = $normalizedRoute;
+  }
+  $headscale_routes =  json_encode($headscale_routes, JSON_PRETTY_PRINT);
+
+  $headscale_policies = $headscale_policies_response['policy'];
+
+  function curl_send($headscale_url, $endpoint, $method, $curl_opts, $post_data=null) {
+    $api_url = $headscale_url . "/" . $endpoint;
+    $ch = curl_init($api_url);
+    $curl_opts[CURLOPT_CUSTOMREQUEST] = strtoupper($method);
+    if ($method === 'POST' && $post_data !== null) {
+      $json_data = json_encode($post_data);
+      $curl_opts[CURLOPT_POSTFIELDS] = $json_data;
+    }
+    curl_setopt_array($ch, $curl_opts);
+    curl_exec($ch);
+    curl_close($ch);
+  }
+} else {
+  echo "<p><b>Faulty configuration! Please reinstall the plugin!</b></p>";
 }
-$headscale_cmd = "docker exec \"" .$headscale_container_name . "\" headscale -o json ";
-$headscale_exec = "docker exec \"" .$headscale_container_name . "\" headscale ";
-$headscale_users = shell_exec($headscale_cmd . "users list");
-$headscale_nodes = shell_exec($headscale_cmd . "nodes list");
-$headscale_routes = shell_exec($headscale_cmd . "routes list");
-$headscale_policies = shell_exec($headscale_cmd . "policy get");
 ?>
 
 <?php
@@ -59,7 +181,7 @@ if (is_array($users)) {
     echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['created_at']['seconds'])) . "</td>";
     echo "<td>
       <form id='deleteuser' method='POST'>
-      <input type='text' name='del_username' value='" . htmlspecialchars($item['name']) . "' hidden>
+      <input type='text' name='del_useridname' value='" . htmlspecialchars($item['id']) . "|" . htmlspecialchars($item['name']) . "' hidden>
       <input type='text' name='user' value='delete' hidden>
       <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Delete' onclick='return deleteSWAL(event, this);'>
       </form>
@@ -95,17 +217,10 @@ if (is_array($users)) {
   echo "</form>";
   echo "</div>";
 } else {
-  $plugin_settings = parse_ini_file('/boot/config/plugins/headscale-admin/settings.cfg');
-  $headscale_container_name = $plugin_settings['CONTAINER_NAME'];
-  echo "<b>Please double check the specified Headscale container name and make sure the container is running:</b>";
-  echo "<form method='POST'>";
-  echo "<input type='text' name='containername' id='containername' pattern='[A-Za-z0-9 \-_.]{2,50}' placeholder='headscale' value='" . $headscale_container_name . "' required>";
-  echo "<button type='submit'>Set</button>";
-  echo "</form>";
-
-  if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    shell_exec('sed -i "/^CONTAINER_NAME=/c\\CONTAINER_NAME=' . htmlspecialchars($_POST['containername']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
-    echo '<script>parent.window.location.reload();</script>';
+  if ($plugin_settings['METHOD'] == 'local') {
+    echo "<p><b>Please double check the specified Headscale container name and make sure the container is running, can't find any users!</b></p>";
+  } elseif ($plugin_settings['METHOD'] == 'api') {
+    echo "<p><b>Please double check the specified Server URL and API Key, can't find any users!</b></p>";
   }
 }
 ?>
@@ -173,7 +288,10 @@ function renameuserSWAL(event, button) {
 function deleteSWAL(event, button) {
   event.preventDefault();
   const formElement = button.closest('form');
-  let del_username = formElement.querySelector('input[name="del_username"]').value;
+  let del_useridname = formElement.querySelector('input[name="del_useridname"]').value;
+
+  let parts = del_useridname.split('|');
+  let del_username = parts[1];
 
   swal({
     title: "Confirm User Deletion",
@@ -197,20 +315,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['username'])) {
       $username = preg_replace('/[^a-zA-Z0-9-_. ]/', '', $_POST['username']);
       $username = str_replace(' ', '_', $username);
-      shell_exec($headscale_exec . "users create " . escapeshellarg($username));
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "users create " . escapeshellarg($username));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $post_data = [
+          "name" => $username
+        ];
+        $curl_opts_post = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json',
+            'Content-Type: application/json'
+          ]
+        ];
+        curl_send($headscale_url, "user", "POST", $curl_opts_post, $post_data);
+      }
       echo '<script>parent.window.location.reload();</script>';
     }
   } elseif ($_POST['user'] === 'rename') {
     if (isset($_POST['newusername'])) {
-      list($nodeid, $nodename) = explode('|', $_POST['useridname']);
+      list($userid, $username) = explode('|', $_POST['useridname']);
       $newusername = preg_replace('/[^a-zA-Z0-9-_. ]/', '', $_POST['newusername']);
       $newusername = str_replace(' ', '_', $newusername);
-      shell_exec($headscale_exec . "users rename --force --identifier ". escapeshellarg($nodeid) . " --new-name " . escapeshellarg($newusername));
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "users rename --force --identifier ". escapeshellarg($userid) . " --new-name " . escapeshellarg($newusername));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $curl_opts = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json'
+          ]
+        ];
+        $endpoint = "user/" . $userid . "/rename/" . $newusername; 
+        curl_send($headscale_url, $endpoint, "POST", $curl_opts);
+      }
       echo '<script>parent.window.location.reload();</script>';
     }
   } elseif ($_POST['user'] === 'delete') {
-    if (isset($_POST['del_username'])) {
-      shell_exec($headscale_exec . "users destroy --force --name ". escapeshellarg($_POST['del_username']));
+    if (isset($_POST['del_useridname'])) {
+      list($userid, $username) = explode('|', $_POST['del_useridname']);
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "users destroy --force --name ". escapeshellarg($username));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $curl_opts = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json'
+          ]
+        ];
+        $endpoint = "user/" . $userid; 
+        curl_send($headscale_url, $endpoint, "DELETE", $curl_opts);
+      }
       echo '<script>parent.window.location.reload();</script>';
     }
   }

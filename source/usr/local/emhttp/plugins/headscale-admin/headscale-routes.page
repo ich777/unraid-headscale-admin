@@ -128,17 +128,53 @@ function deleterouteSWAL(event, button) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($_POST['route'] === 'enable') {
     if (isset($_POST['enable_route_id'])) {
-      shell_exec($headscale_exec . "routes enable --force --route " . escapeshellarg($_POST['enable_route_id']));
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "routes enable --force --route " . escapeshellarg($_POST['enable_route_id']));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $curl_opts = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json'
+          ]
+        ];
+        $endpoint = "routes/" . $_POST['enable_route_id'] . "/enable"; 
+        curl_send($headscale_url, $endpoint, "POST", $curl_opts);
+      }
       echo '<script>parent.window.location.reload();</script>';
     }
   } elseif ($_POST['route'] === 'disable') {
     if (isset($_POST['disable_route_id'])) {
-      shell_exec($headscale_exec . "routes disable --force --route " . escapeshellarg($_POST['disable_route_id']));
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "routes disable --force --route " . escapeshellarg($_POST['disable_route_id']));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $curl_opts = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json'
+          ]
+        ];
+        $endpoint = "routes/" . $_POST['disable_route_id'] . "/disable"; 
+        curl_send($headscale_url, $endpoint, "POST", $curl_opts);
+      }
       echo '<script>parent.window.location.reload();</script>';
     }
   } elseif ($_POST['route'] === 'delete') {
     if (isset($_POST['del_route_id'])) {
-      shell_exec($headscale_exec . "routes delete --force --route ". escapeshellarg($_POST['del_route_id']));
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "routes delete --force --route ". escapeshellarg($_POST['del_route_id']));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $curl_opts = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json'
+          ]
+        ];
+        $endpoint = "routes/" . $_POST['del_route_id']; 
+        curl_send($headscale_url, $endpoint, "DELETE", $curl_opts);
+      }
       echo '<script>parent.window.location.reload();</script>';
     }
   }

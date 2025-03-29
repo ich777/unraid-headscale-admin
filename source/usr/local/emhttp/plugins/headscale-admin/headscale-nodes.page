@@ -17,7 +17,7 @@ if (is_array($nodes)) {
   echo "<th>Valid Tags</th>";
   echo "<th>Last Seen</th>";
   echo "<th>Expiration</th>";
-  echo "<th>Epired</th>";
+  echo "<th>Expired</th>";
   echo "<th>Connected</th>";
   echo "<th>Expire Node</th>";
   echo "<th>Delete Node</th>";
@@ -340,7 +340,19 @@ function deletenodeSWAL(event, button) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($_POST['node'] === 'register') {
     if (isset($_POST['nodeuser'])) {
-      shell_exec($headscale_exec . "nodes register --user " . escapeshellarg($_POST['nodeuser']) . " --key " . escapeshellarg($_POST['regkey']));
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "nodes register --user " . escapeshellarg($_POST['nodeuser']) . " --key " . escapeshellarg($_POST['regkey']));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $curl_opts = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json'
+          ]
+        ];
+        $endpoint = "node/register?user=" . $_POST['nodeuser'] . "&key=" . $_POST['regkey']; 
+        curl_send($headscale_url, $endpoint, "POST", $curl_opts);
+      }
       echo '<script>parent.window.location.reload();</script>';
     }
   } elseif ($_POST['node'] === 'rename') {
@@ -348,31 +360,99 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       list($nodeid, $nodename) = explode('|', $_POST['nodeidname']);
       $newnodename = preg_replace('/[^a-zA-Z0-9-_. ]/', '', $_POST['newnodename']);
       $newnodename = str_replace(' ', '_', $newnodename);
-      shell_exec($headscale_exec . "nodes rename --force --identifier ". escapeshellarg($nodeid) . " " . escapeshellarg($newnodename));
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "nodes rename --force --identifier ". escapeshellarg($nodeid) . " " . escapeshellarg($newnodename));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $curl_opts = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json'
+          ]
+        ];
+        $endpoint = "node/" . $nodeid . "/rename/" . $newnodename; 
+        curl_send($headscale_url, $endpoint, "POST", $curl_opts);
+      }
       echo '<script>parent.window.location.reload();</script>';
     }
   } elseif ($_POST['node'] === 'addtag') {
     if (isset($_POST['nodetag'])) {
       list($nodeid, $nodename) = explode('|', $_POST['nodeidname']);
-      $nodetag = preg_replace('/[^a-zA-Z0-9-_. ]/', '', $_POST['nodetag']);
+      $nodetag = preg_replace('/[^a-zA-Z0-9-_.: ]/', '', $_POST['nodetag']);
       $nodetag = str_replace(' ', '_', $nodetag);
-      shell_exec($headscale_exec . "nodes tag --force --identifier ". escapeshellarg($nodeid) . " --tags " . escapeshellarg($nodetag));
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "nodes tag --force --identifier ". escapeshellarg($nodeid) . " --tags " . escapeshellarg($nodetag));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $post_data = [
+          "tags" => [$nodetag]
+        ];
+        $curl_opts_post = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json',
+            'Content-Type: application/json'
+          ]
+        ];
+        $endpoint = "node/" . $nodeid . "/tags";
+        curl_send($headscale_url, $endpoint, "POST", $curl_opts_post, $post_data);
+      }
       echo '<script>parent.window.location.reload();</script>';
     }
   } elseif ($_POST['node'] === 'move') {
     if (isset($_POST['newnodeuser'])) {
       list($nodeid, $nodename) = explode('|', $_POST['nodeidname']);
-      shell_exec($headscale_exec . "nodes move --force --identifier ". escapeshellarg($nodeid) . " --user " . escapeshellarg($_POST['newnodeuser']));
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "nodes move --force --identifier ". escapeshellarg($nodeid) . " --user " . escapeshellarg($_POST['newnodeuser']));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $post_data = [
+          "user" => $_POST['newnodeuser']
+        ];
+        $curl_opts_post = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json',
+            'Content-Type: application/json'
+          ]
+        ];
+        $endpoint = "node/" . $nodeid . "/user";
+        curl_send($headscale_url, $endpoint, "POST", $curl_opts_post, $post_data);
+      }
       echo '<script>parent.window.location.reload();</script>';
     }
   } elseif ($_POST['node'] === 'expire') {
     if (isset($_POST['expire_node_id'])) {
-      shell_exec($headscale_exec . "nodes expire --force --identifier ". escapeshellarg($_POST['expire_node_id']));
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "nodes expire --force --identifier ". escapeshellarg($_POST['expire_node_id']));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $curl_opts = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json'
+          ]
+        ];
+        $endpoint = "node/" . $_POST['expire_node_id'] . "/expire"; 
+        curl_send($headscale_url, $endpoint, "POST", $curl_opts);
+      }
       echo '<script>parent.window.location.reload();</script>';
     }
   } elseif ($_POST['node'] === 'delete') {
     if (isset($_POST['del_node_id'])) {
-      shell_exec($headscale_exec . "nodes delete --force --identifier ". escapeshellarg($_POST['del_node_id']));
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "nodes delete --force --identifier ". escapeshellarg($_POST['del_node_id']));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $curl_opts = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json'
+          ]
+        ];
+        $endpoint = "node/" . $_POST['del_node_id']; 
+        curl_send($headscale_url, $endpoint, "DELETE", $curl_opts);
+      }
       echo '<script>parent.window.location.reload();</script>';
     }
   }

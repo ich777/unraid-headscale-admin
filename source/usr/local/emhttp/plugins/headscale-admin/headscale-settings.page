@@ -1,0 +1,54 @@
+Menu="headscale-admin:5"
+Title="Settings"
+Tag="wrench"
+---
+<?php
+echo "<b>Plugin mode: </b>";
+echo "<form method='POST'>";
+echo "<select name='method' id='method'>";
+echo "<option value='local'" . (($plugin_settings['METHOD'] == 'local') ? ' selected' : '') . ">Local</option>";
+echo "<option value='api' " . (($plugin_settings['METHOD'] == 'api') ? ' selected' : '') . ">API</option>";
+echo "</select>";
+echo "<input type='text' name='settings' value='change_method' hidden>";
+echo "<input type='submit' value='Change'>";
+echo "</form>";
+
+echo "<hr/>";
+
+if ($plugin_settings['METHOD'] == 'local') {
+  echo "<b>Change Container name:</b>";
+  echo "<form method='POST'>";
+  echo "<input type='text' name='containername' id='containername' pattern='[A-Za-z0-9 \-_.]{2,50}' placeholder='headscale' value='" . $headscale_container_name . "' required>";
+  echo "<input type='text' name='settings' value='change_container_name' hidden>";
+  echo "<button type='submit'>Set</button>";
+  echo "</form>";
+} elseif ($plugin_settings['METHOD'] == 'api') {
+  echo "<b>Change API settings:</b>";
+  echo "<form method='POST'>";
+  echo "<input type='text' name='api_url' id='api_url' placeholder='https://headscale.yourdomain.org' " . ((isset($plugin_settings['URL'])) ? ' value=\'' . $plugin_settings['URL'] . '\'': '') . " required>";
+  echo "<input type='password' name='api_key' id='api_key' placeholder='Headscale API Key' " . ((isset($plugin_settings['API_KEY'])) ? ' value=\'' . $plugin_settings['API_KEY'] . '\'': '') . " required>";
+  echo "<input type='text' name='settings' value='change_api_settings' hidden>";
+  echo "<button type='submit'>Set</button>";
+  echo "</form>";
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+  if ($_POST['settings'] === 'change_method') {
+    shell_exec('sed -i "/^METHOD=/c\\METHOD=' . htmlspecialchars($_POST['method']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
+    if ($_POST['method'] === 'local') {
+      shell_exec('sed -i "/^URL=/c\\URL=" "/boot/config/plugins/headscale-admin/settings.cfg"');
+      shell_exec('sed -i "/^API_KEY=/c\\API_KEY=" "/boot/config/plugins/headscale-admin/settings.cfg"');
+    } elseif ($_POST['method'] === 'api') {
+      shell_exec('sed -i "/^CONTAINER_NAME=/c\\CONTAINER_NAME=" "/boot/config/plugins/headscale-admin/settings.cfg"');
+    }
+    echo '<script>parent.window.location.reload();</script>';
+  } elseif ($_POST['settings'] === 'change_container_name') {
+    shell_exec('sed -i "/^CONTAINER_NAME=/c\\CONTAINER_NAME=' . htmlspecialchars($_POST['containername']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
+    echo '<script>parent.window.location.reload();</script>';
+  } elseif ($_POST['settings'] === 'change_api_settings') {
+    shell_exec('sed -i "/^URL=/c\\URL=' . htmlspecialchars($_POST['api_url']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
+    shell_exec('sed -i "/^API_KEY=/c\\API_KEY=' . htmlspecialchars($_POST['api_key']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
+    echo '<script>parent.window.location.reload();</script>';
+  }
+}
+?>
