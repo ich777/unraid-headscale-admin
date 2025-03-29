@@ -55,8 +55,10 @@ API_KEY=' > "&plugin;/settings.cfg"
   echo "Trying to determine Headscale container name"
   CONTAINERNAME="$(docker ps -a --format "{{.Names}}" 2&gt;/dev/null | grep -i "^headscale$")"
   if [ -z "${CONTAINERNAME}" ]; then
-    echo "Couldn't determine Container name from Headscale"
-    echo "Please go to the plugin page and configure the container name manually!"
+    echo "Couldn't determine Container name from Headscale!"
+    echo
+    echo "Please go to the plugin page and configure the container name manually or"
+    echo "if you plan to use the plugin in API mode change the plugin to API Mode."
   else
     echo "Setting Headscale Container name to: ${CONTAINERNAME}"
     sed -i "/^CONTAINER_NAME=/c\\CONTAINER_NAME=${CONTAINERNAME}" "&plugin;/settings.cfg"
