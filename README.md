@@ -2,7 +2,7 @@
 
 This Plugin gives you the ability to Manage your Headscale Docker Container from within your Unraid WebUI.
 
-#### ATTENTION: You need to have the Headscale Docker container installed and configured on your Unraid Server for this plugin to work.
+#### Note: This plugin supports both Local Mode (through docker exec) and API Mode (through the API), please visit the settings if you are planing to use the plugin in API mode.
 
 ## Installation
 
