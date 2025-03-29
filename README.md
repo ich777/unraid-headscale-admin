@@ -26,14 +26,21 @@ On this tab you can see a list from all Nodes, register, rename, tag, move, expi
 ![screenshot](images/3-routes.png)
 On this tab you can see a list from all Routes, enable, disable and delete them.
 
-3. Policies Tab:
+4. Policies Tab:
 ![screenshot](images/4-policies.png)
 On this tab you can see a list from all your policies if there are any.  
 _Please note that this is a static page and only meant to show your policies._
 
+5. Settings:  
+Local Mode:  
+![screenshot](images/5-settings_local.png)  
+API Mode:  
+![screenshot](images/5-settings_local.png)
+
 ## How this works
 
-The plugin pulls information and executes commands directly through `docker exec` from and in your Headscale container.
+- In Local Mode the plugin pulls information and executes commands directly through `docker exec` from and in your Headscale container.  
+- In API Mode the plugin pulls information right from the Headscale API, please note that you have to generate a API Key on your Server first to be able to interact with it. To do that issue: `headscale apikeys create` on the instance that you want to connect to and past the URL alongside with the API Key into the Settings section from the plugin.
 
 ## Reporting Issues
 
