@@ -37,7 +37,7 @@ rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2>/dev/null|grep -v '&version
 
 This plugin is a simple Administration Panel for Headscale
 
-ATTENTION: This plugin is designed to be used with the Headscale Docker container on Unraid
+Note: This plugin supports both Local mode (through docker exec) and API mode (through the API), please visit the settings if you are planing to use the plugin in API mode.
 </INLINE>
 </FILE>
 
