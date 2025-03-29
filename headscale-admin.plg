@@ -6,7 +6,7 @@
   <!ENTITY launch    "Settings/headscale-admin">
   <!ENTITY gitURL    "https://github.com/&author;/unraid-&name;/raw/master">
   <!ENTITY pluginURL "&gitURL;/&name;.plg">
-  <!ENTITY md5       "0ebf0cbcb6e0ea19a630f8f35670efa2">
+  <!ENTITY md5       "6679e6840346dc5bc389871e78758ef1">
   <!ENTITY plugin    "/boot/config/plugins/&name;">
   <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 ]>
