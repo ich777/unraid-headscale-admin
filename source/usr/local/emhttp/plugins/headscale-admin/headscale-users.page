@@ -33,8 +33,8 @@ if (!$plugin_settings['CONTAINER_NAME']) {
     echo '<script>parent.window.location.reload();</script>';
   }
 }
-$headscale_cmd = "docker exec " .$headscale_container_name . " headscale -o json ";
-$headscale_exec = "docker exec " .$headscale_container_name . " headscale ";
+$headscale_cmd = "docker exec \"" .$headscale_container_name . "\" headscale -o json ";
+$headscale_exec = "docker exec \"" .$headscale_container_name . "\" headscale ";
 $headscale_users = shell_exec($headscale_cmd . "users list");
 $headscale_nodes = shell_exec($headscale_cmd . "nodes list");
 $headscale_routes = shell_exec($headscale_cmd . "routes list");
