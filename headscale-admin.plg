@@ -2,11 +2,11 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name      "headscale-admin">
   <!ENTITY author    "ich777">
-  <!ENTITY version   "2025.03.28">
+  <!ENTITY version   "2025.03.29">
   <!ENTITY launch    "Settings/headscale-admin">
   <!ENTITY gitURL    "https://github.com/&author;/unraid-&name;/raw/master">
   <!ENTITY pluginURL "&gitURL;/&name;.plg">
-  <!ENTITY md5       "4c9740f362a4863ac9b5365f782c4853">
+  <!ENTITY md5       "f4781e65167693715c1e53b90467e725">
   <!ENTITY plugin    "/boot/config/plugins/&name;">
   <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 ]>
@@ -15,7 +15,7 @@
 
 <CHANGES>
 
-###2025.03.28
+###2025.03.29
 - Initial Release
 
 </CHANGES>
