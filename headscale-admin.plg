@@ -46,7 +46,10 @@ ATTENTION: This plugin is designed to be used with the Headscale Docker containe
 
 #Create settings file if not found and try to get Headscale container name
 if [ ! -f "&plugin;/settings.cfg" ]; then
-  echo 'CONTAINER_NAME=' > "&plugin;/settings.cfg"
+  echo 'METHOD=local
+CONTAINER_NAME=
+URL=
+API_KEY=' > "&plugin;/settings.cfg"
 
   echo
   echo "Trying to determine Headscale container name"
