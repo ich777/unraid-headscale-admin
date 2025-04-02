@@ -2,11 +2,11 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name      "headscale-admin">
   <!ENTITY author    "ich777">
-  <!ENTITY version   "2025.03.29">
+  <!ENTITY version   "2025.04.02">
   <!ENTITY launch    "Settings/headscale-admin">
   <!ENTITY gitURL    "https://github.com/&author;/unraid-&name;/raw/master">
   <!ENTITY pluginURL "&gitURL;/&name;.plg">
-  <!ENTITY md5       "6679e6840346dc5bc389871e78758ef1">
+  <!ENTITY md5       "688c166faaf1ff1d9fa840db6d7f174e">
   <!ENTITY plugin    "/boot/config/plugins/&name;">
   <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 ]>
@@ -14,6 +14,9 @@
 <PLUGIN  name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.0" icon="headscale.png" support="https://forums.unraid.net/topic/92865-support-ich777-amd-vendor-reset-coraltpu-hpsahba">
 
 <CHANGES>
+
+###2025.04.02
+- Fix php warnings
 
 ###2025.03.29
 - Initial Release
