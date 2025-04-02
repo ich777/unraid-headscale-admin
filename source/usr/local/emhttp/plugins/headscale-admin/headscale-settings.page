@@ -33,7 +33,7 @@ if ($plugin_settings['METHOD'] == 'local') {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  if ($_POST['settings'] === 'change_method') {
+  if (isset($_POST['settings']) && $_POST['settings'] === 'change_method') {
     shell_exec('sed -i "/^METHOD=/c\\METHOD=' . htmlspecialchars($_POST['method']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
     if ($_POST['method'] === 'local') {
       shell_exec('sed -i "/^URL=/c\\URL=" "/boot/config/plugins/headscale-admin/settings.cfg"');
@@ -42,10 +42,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       shell_exec('sed -i "/^CONTAINER_NAME=/c\\CONTAINER_NAME=" "/boot/config/plugins/headscale-admin/settings.cfg"');
     }
     echo '<script>parent.window.location.reload();</script>';
-  } elseif ($_POST['settings'] === 'change_container_name') {
+  } elseif (isset($_POST['settings']) && $_POST['settings'] === 'change_container_name') {
     shell_exec('sed -i "/^CONTAINER_NAME=/c\\CONTAINER_NAME=' . htmlspecialchars($_POST['containername']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
     echo '<script>parent.window.location.reload();</script>';
-  } elseif ($_POST['settings'] === 'change_api_settings') {
+  } elseif (isset($_POST['settings']) && $_POST['settings'] === 'change_api_settings') {
     shell_exec('sed -i "/^URL=/c\\URL=' . htmlspecialchars($_POST['api_url']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
     shell_exec('sed -i "/^API_KEY=/c\\API_KEY=' . htmlspecialchars($_POST['api_key']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
     echo '<script>parent.window.location.reload();</script>';

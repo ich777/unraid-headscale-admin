@@ -79,8 +79,6 @@ if ($plugin_settings['METHOD'] == 'local') {
   }
 
   foreach ($headscale_users_response['users'] as $user) {
-    $dateTime = new DateTime($isoDate);
-    $timestamp = $dateTime->getTimestamp();
     $normalizedUser = [
       "id" => (int) $user["id"],
       "name" => $user["name"],
@@ -311,7 +309,7 @@ function deleteSWAL(event, button) {
 
 <?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if ($_POST['user'] === 'create') {
+  if (isset($_POST['user']) && $_POST['user'] === 'create') {
     if (isset($_POST['username'])) {
       $username = preg_replace('/[^a-zA-Z0-9-_. ]/', '', $_POST['username']);
       $username = str_replace(' ', '_', $username);
@@ -333,7 +331,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
       echo '<script>parent.window.location.reload();</script>';
     }
-  } elseif ($_POST['user'] === 'rename') {
+  } elseif (isset($_POST['user']) && $_POST['user'] === 'rename') {
     if (isset($_POST['newusername'])) {
       list($userid, $username) = explode('|', $_POST['useridname']);
       $newusername = preg_replace('/[^a-zA-Z0-9-_. ]/', '', $_POST['newusername']);
@@ -353,7 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
       echo '<script>parent.window.location.reload();</script>';
     }
-  } elseif ($_POST['user'] === 'delete') {
+  } elseif (isset($_POST['user']) && $_POST['user'] === 'delete') {
     if (isset($_POST['del_useridname'])) {
       list($userid, $username) = explode('|', $_POST['del_useridname']);
       if ($plugin_settings['METHOD'] == 'local') {

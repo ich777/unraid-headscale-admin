@@ -26,7 +26,7 @@ if (is_array($routes)) {
     echo "<td>" . htmlspecialchars($item['prefix']) . "</td>";
     echo "<td>" . ($item['advertised'] == 1 ? "true" : "false") . "</td>";
     echo "<td class='" . ($item['enabled'] == 1 ? "text-green" : "text-red") . "'>" . ($item['enabled'] == 1 ? "true" : "false") . "</td>";
-    echo "<td>" . ($item['primary'] == 1 ? "true" : "-") . "</td>";
+    echo "<td>" . (isset($item['primary']) && $item['primary'] == 1 ? "true" : "-") . "</td>";
     echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['created_at']['seconds'])) . "</td>";
     echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['updated_at']['seconds'])) . "</td>";
     echo "<td>";
@@ -126,7 +126,7 @@ function deleterouteSWAL(event, button) {
 
 <?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if ($_POST['route'] === 'enable') {
+  if (isset($_POST['route']) && $_POST['route'] === 'enable') {
     if (isset($_POST['enable_route_id'])) {
       if ($plugin_settings['METHOD'] == 'local') {
         shell_exec($headscale_exec . "routes enable --force --route " . escapeshellarg($_POST['enable_route_id']));
@@ -143,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
       echo '<script>parent.window.location.reload();</script>';
     }
-  } elseif ($_POST['route'] === 'disable') {
+  } elseif (isset($_POST['route']) && $_POST['route'] === 'disable') {
     if (isset($_POST['disable_route_id'])) {
       if ($plugin_settings['METHOD'] == 'local') {
         shell_exec($headscale_exec . "routes disable --force --route " . escapeshellarg($_POST['disable_route_id']));
@@ -160,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
       echo '<script>parent.window.location.reload();</script>';
     }
-  } elseif ($_POST['route'] === 'delete') {
+  } elseif (isset($_POST['route']) && $_POST['route'] === 'delete') {
     if (isset($_POST['del_route_id'])) {
       if ($plugin_settings['METHOD'] == 'local') {
         shell_exec($headscale_exec . "routes delete --force --route ". escapeshellarg($_POST['del_route_id']));
