@@ -3,61 +3,64 @@ Title="Routes"
 Tag="exchange"
 ---
 <?php
-$routes = json_decode($headscale_routes, true);
-if (is_array($routes)) {
-  echo "<table>";
-  echo "<tr>";
-  echo "<th>ID</th>";
-  echo "<th>Name</th>";
-  echo "<th>Prefix</th>";
-  echo "<th>Advertised</th>";
-  echo "<th>Enabled</th>";
-  echo "<th>Primary</th>";
-  echo "<th>Created</th>";
-  echo "<th>Updated</th>";
-  echo "<th>Enable/Disable</th>";
-  echo "<th>Delete</th>";
-  echo "</tr>";
-
-  foreach ($routes as $item) {
+if (isset($headscale_routes)) {
+  $routes = json_decode($headscale_routes, true);
+  if (is_array($routes)) {
+    echo "<table>";
     echo "<tr>";
-    echo "<td>" . htmlspecialchars($item['id']) . "</td>";
-    echo "<td>" . htmlspecialchars($item['node']['name']) . "</td>";
-    echo "<td>" . htmlspecialchars($item['prefix']) . "</td>";
-    echo "<td>" . ($item['advertised'] == 1 ? "true" : "false") . "</td>";
-    echo "<td class='" . ($item['enabled'] == 1 ? "text-green" : "text-red") . "'>" . ($item['enabled'] == 1 ? "true" : "false") . "</td>";
-    echo "<td>" . (isset($item['primary']) && $item['primary'] == 1 ? "true" : "-") . "</td>";
-    echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['created_at']['seconds'])) . "</td>";
-    echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['updated_at']['seconds'])) . "</td>";
-    echo "<td>";
-    if ($item['enabled'] == 1) {
-      echo "<form id='disable' method='POST'>
-      <input type='text' name='disable_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
-      <input type='text' name='disable_route_name' value='" . htmlspecialchars($item['node']['name']) . "' hidden>
-      <input type='text' name='route' value='disable' hidden>
-      <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Disable' onclick='return disablerouteSWAL(event, this);'>
-      </form>";
-    } else {
-      echo "<form id='enable' method='POST'>
-      <input type='text' name='enable_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
-      <input type='text' name='enable_route_name' value='" . htmlspecialchars($item['node']['name']) . "' hidden>
-      <input type='text' name='route' value='enable' hidden>
-      <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Enable' onclick='return enablerouteSWAL(event, this);'>
-      </form>";
-    }
-    echo "</td>";
-    echo "<td>
-    <form id='deleteroute' method='POST'>
-      <input type='text' name='del_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
-      <input type='text' name='del_route_name' value='" . htmlspecialchars($item['node']['name']) . "' hidden>
-      <input type='text' name='route' value='delete' hidden>
-      <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Delete' onclick='return deleterouteSWAL(event, this);'>
-    </form>
-    </td>";
+    echo "<th>ID</th>";
+    echo "<th>Name</th>";
+    echo "<th>Prefix</th>";
+    echo "<th>Advertised</th>";
+    echo "<th>Enabled</th>";
+    echo "<th>Primary</th>";
+    echo "<th>Created</th>";
+    echo "<th>Updated</th>";
+    echo "<th>Enable/Disable</th>";
+    echo "<th>Delete</th>";
     echo "</tr>";
+
+    foreach ($routes as $item) {
+      echo "<tr>";
+      echo "<td>" . htmlspecialchars($item['id']) . "</td>";
+      echo "<td>" . htmlspecialchars($item['node']['name']) . "</td>";
+      echo "<td>" . htmlspecialchars($item['prefix']) . "</td>";
+      echo "<td>" . ($item['advertised'] == 1 ? "true" : "false") . "</td>";
+      echo "<td class='" . ($item['enabled'] == 1 ? "text-green" : "text-red") . "'>" . ($item['enabled'] == 1 ? "true" : "false") . "</td>";
+      echo "<td>" . (isset($item['primary']) && $item['primary'] == 1 ? "true" : "-") . "</td>";
+      echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['created_at']['seconds'])) . "</td>";
+      echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['updated_at']['seconds'])) . "</td>";
+      echo "<td>";
+      if ($item['enabled'] == 1) {
+        echo "<form id='disable' method='POST'>
+        <input type='text' name='disable_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
+        <input type='text' name='disable_route_name' value='" . htmlspecialchars($item['node']['name']) . "' hidden>
+        <input type='text' name='route' value='disable' hidden>
+        <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Disable' onclick='return disablerouteSWAL(event, this);'>
+        </form>";
+      } else {
+        echo "<form id='enable' method='POST'>
+        <input type='text' name='enable_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
+        <input type='text' name='enable_route_name' value='" . htmlspecialchars($item['node']['name']) . "' hidden>
+        <input type='text' name='route' value='enable' hidden>
+        <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Enable' onclick='return enablerouteSWAL(event, this);'>
+        </form>";
+      }
+      echo "</td>";
+      echo "<td>
+      <form id='deleteroute' method='POST'>
+        <input type='text' name='del_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
+        <input type='text' name='del_route_name' value='" . htmlspecialchars($item['node']['name']) . "' hidden>
+        <input type='text' name='route' value='delete' hidden>
+        <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Delete' onclick='return deleterouteSWAL(event, this);'>
+      </form>
+      </td>";
+      echo "</tr>";
+    }
+    echo "</table>";
   }
-  echo "</table>";
 } else {
+  $routes = null;
   echo "<p><b>No Routes found!</b></p>";
 }
 ?>

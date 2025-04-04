@@ -53,23 +53,6 @@ if ($plugin_settings['METHOD'] == 'local') {
     ]
   ];
 
-  foreach ($headscale_endpoints as $endpoint) {
-    $ch = curl_init();
-    $full_url = $headscale_url . "/" . $endpoint;
-    curl_setopt($ch, CURLOPT_URL, $full_url);
-    curl_setopt_array($ch, $curl_opts);
-    if ($endpoint == 'user') {
-      $headscale_users_response = json_decode(curl_exec($ch), true);
-    } elseif ($endpoint == 'node') {
-      $headscale_nodes_response = json_decode(curl_exec($ch), true);
-    } elseif ($endpoint == 'routes') {
-      $headscale_routes_response = json_decode(curl_exec($ch), true);
-    } elseif ($endpoint == 'policy') {
-      $headscale_policies_response = json_decode(curl_exec($ch), true);
-    }
-    curl_close($ch);
-  }
-
   function convertToSeconds($isoDate) {
     $dateTime = new DateTime($isoDate);
     $timestamp = $dateTime->getTimestamp();
@@ -78,71 +61,125 @@ if ($plugin_settings['METHOD'] == 'local') {
     ];
   }
 
-  foreach ($headscale_users_response['users'] as $user) {
-    $normalizedUser = [
-      "id" => (int) $user["id"],
-      "name" => $user["name"],
-      "created_at" => convertToSeconds($user["createdAt"])
-    ];
-    $headscale_users[] = $normalizedUser;
+  if (isset($headscale_endpoints)) {
+    foreach ($headscale_endpoints as $endpoint) {
+      $ch = curl_init();
+      $full_url = $headscale_url . "/" . $endpoint;
+      curl_setopt($ch, CURLOPT_URL, $full_url);
+      curl_setopt_array($ch, $curl_opts);
+      if ($endpoint == 'user') {
+        $curl_users_response = curl_exec($ch);
+        if (isset($curl_users_response)) {
+          $headscale_users_response = json_decode($curl_users_response, true);
+        } else {
+          $headscale_users_response = null;
+        }
+      } elseif ($endpoint == 'node') {
+        $curl_node_response = curl_exec($ch);
+        if (isset($curl_node_response)) {
+          $headscale_nodes_response = json_decode($curl_node_response, true);
+        } else {
+          $headscale_nodes_response = null;
+        }
+      } elseif ($endpoint == 'routes') {
+        $curl_routes_response = curl_exec($ch);
+        if (isset($curl_routes_response)) {
+          $headscale_routes_response = json_decode($curl_routes_response, true);
+        } else {
+          $headscale_routes_response = null;
+        }
+      } elseif ($endpoint == 'policy') {
+        $curl_policy_response = curl_exec($ch);
+        if (isset($curl_policy_response)) {
+          $headscale_policies_response = json_decode($curl_policy_response, true);
+        } else {
+          $headscale_policies_response = null;
+        }
+      }
+      curl_close($ch);
+    }
   }
-  $headscale_users = json_encode($headscale_users, JSON_PRETTY_PRINT);
 
+  if (isset($headscale_users_response)) {
+    foreach ($headscale_users_response['users'] as $user) {
+      $normalizedUser = [
+        "id" => (int) $user["id"],
+        "name" => $user["name"],
+        "created_at" => convertToSeconds($user["createdAt"])
+      ];
+      $headscale_users[] = $normalizedUser;
+    }
+    $headscale_users = json_encode($headscale_users, JSON_PRETTY_PRINT);
+  } else {
+    $headscale_users = null;
+  }
 
-  foreach ($headscale_nodes_response['nodes'] as $node) {
-    $normalizedNode = [
-      "id" => (int)$node["id"],
-      "machine_key" => $node["machineKey"],
-      "node_key" => $node["nodeKey"],
-      "disco_key" => $node["discoKey"],
-      "ip_addresses" => $node["ipAddresses"],
-      "name" => $node["name"],
-      "user" => [
-        "id" => (int)$node["user"]["id"],
-        "name" => $node["user"]["name"],
-        "created_at" => convertToSeconds($node["user"]["createdAt"])
+  if (isset($headscale_nodes_response)) {
+    foreach ($headscale_nodes_response['nodes'] as $node) {
+      $normalizedNode = [
+        "id" => (int)$node["id"],
+        "machine_key" => $node["machineKey"],
+        "node_key" => $node["nodeKey"],
+        "disco_key" => $node["discoKey"],
+        "ip_addresses" => $node["ipAddresses"],
+        "name" => $node["name"],
+        "user" => [
+          "id" => (int)$node["user"]["id"],
+          "name" => $node["user"]["name"],
+          "created_at" => convertToSeconds($node["user"]["createdAt"])
+        ],
+        "last_seen" => convertToSeconds($node["lastSeen"]),
+        "created_at" => convertToSeconds($node["createdAt"]),
+        "expiry" => isset($node['expiry']) ? convertToSeconds($node['expiry']) : null,
+        "valid_tags" => isset($node['validTags']) ? $node['validTags'] : null,
+        "given_name" => $node["givenName"],
+        "online" => $node["online"]
+      ];
+      $headscale_nodes[] = $normalizedNode;
+    }
+    $headscale_nodes =  json_encode($headscale_nodes, JSON_PRETTY_PRINT);
+  } else {
+    $headscale_nodes = null;
+  }
+
+  if (isset($headscale_routes_response)) {
+    foreach ($headscale_routes_response['routes'] as $route) {
+    $normalizedRoute = [
+      "id" => (int)$route["id"],
+      "node" => [
+        "id" => (int)$route["node"]["id"],
+        "machine_key" => $route["node"]["machineKey"],
+        "node_key" => $route["node"]["nodeKey"],
+        "disco_key" => $route["node"]["discoKey"],
+        "ip_addresses" => $route["node"]["ipAddresses"],
+        "name" => $route["node"]["name"],
+        "user" => [
+          "id" => (int)$route["node"]["user"]["id"],
+          "name" => $route["node"]["user"]["name"],
+          "created_at" => convertToSeconds($route["node"]["user"]["createdAt"])
+        ],
+        "last_seen" => convertToSeconds($route["node"]["lastSeen"]),
+        "created_at" => convertToSeconds($route["node"]["createdAt"]),
+        "given_name" => $route["node"]["givenName"],
       ],
-      "last_seen" => convertToSeconds($node["lastSeen"]),
-      "created_at" => convertToSeconds($node["createdAt"]),
-      "expiry" => isset($node['expiry']) ? convertToSeconds($node['expiry']) : null,
-      "valid_tags" => isset($node['validTags']) ? $node['validTags'] : null,
-      "given_name" => $node["givenName"],
-      "online" => $node["online"]
+      "prefix" => $route["prefix"],
+      "advertised" => $route["advertised"],
+      "enabled" => $route["enabled"],
+      "created_at" => convertToSeconds($route["createdAt"]),
+      "updated_at" => convertToSeconds($route["updatedAt"])
     ];
-    $headscale_nodes[] = $normalizedNode;
+    $headscale_routes[] = $normalizedRoute;
+    }
+    $headscale_routes =  json_encode($headscale_routes, JSON_PRETTY_PRINT);
+  } else {
+    $headscale_routes = null;
   }
-  $headscale_nodes =  json_encode($headscale_nodes, JSON_PRETTY_PRINT);
 
-  foreach ($headscale_routes_response['routes'] as $route) {
-  $normalizedRoute = [
-    "id" => (int)$route["id"],
-    "node" => [
-      "id" => (int)$route["node"]["id"],
-      "machine_key" => $route["node"]["machineKey"],
-      "node_key" => $route["node"]["nodeKey"],
-      "disco_key" => $route["node"]["discoKey"],
-      "ip_addresses" => $route["node"]["ipAddresses"],
-      "name" => $route["node"]["name"],
-      "user" => [
-        "id" => (int)$route["node"]["user"]["id"],
-        "name" => $route["node"]["user"]["name"],
-        "created_at" => convertToSeconds($route["node"]["user"]["createdAt"])
-      ],
-      "last_seen" => convertToSeconds($route["node"]["lastSeen"]),
-      "created_at" => convertToSeconds($route["node"]["createdAt"]),
-      "given_name" => $route["node"]["givenName"],
-    ],
-    "prefix" => $route["prefix"],
-    "advertised" => $route["advertised"],
-    "enabled" => $route["enabled"],
-    "created_at" => convertToSeconds($route["createdAt"]),
-    "updated_at" => convertToSeconds($route["updatedAt"])
-  ];
-  $headscale_routes[] = $normalizedRoute;
+  if (isset($headscale_policies_response)) {
+    $headscale_policies = $headscale_policies_response['policy'];
+  } else {
+    $headscale_policies = null;
   }
-  $headscale_routes =  json_encode($headscale_routes, JSON_PRETTY_PRINT);
-
-  $headscale_policies = $headscale_policies_response['policy'];
 
   function curl_send($headscale_url, $endpoint, $method, $curl_opts, $post_data=null) {
     $api_url = $headscale_url . "/" . $endpoint;
@@ -162,59 +199,62 @@ if ($plugin_settings['METHOD'] == 'local') {
 ?>
 
 <?php
-$users = json_decode($headscale_users, true);
-if (is_array($users)) {
-  echo "<table>";
-  echo "<tr>";
-  echo "<th>ID</th>";
-  echo "<th>Name</th>";
-  echo "<th>Created</th>";
-  echo "<th>Delete User</th>";
-  echo "</tr>";
-
-  foreach ($users as $item) {
+if (isset($headscale_users)) {
+  $users = json_decode($headscale_users, true);
+  if (is_array($users)) {
+    echo "<table>";
     echo "<tr>";
-    echo "<td>" . htmlspecialchars($item['id']) . "</td>";
-    echo "<td>" . htmlspecialchars($item['name']) . "</td>";
-    echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['created_at']['seconds'])) . "</td>";
-    echo "<td>
-      <form id='deleteuser' method='POST'>
-      <input type='text' name='del_useridname' value='" . htmlspecialchars($item['id']) . "|" . htmlspecialchars($item['name']) . "' hidden>
-      <input type='text' name='user' value='delete' hidden>
-      <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Delete' onclick='return deleteSWAL(event, this);'>
-      </form>
-      </td>";
+    echo "<th>ID</th>";
+    echo "<th>Name</th>";
+    echo "<th>Created</th>";
+    echo "<th>Delete User</th>";
     echo "</tr>";
+
+    foreach ($users as $item) {
+      echo "<tr>";
+      echo "<td>" . htmlspecialchars($item['id']) . "</td>";
+      echo "<td>" . htmlspecialchars($item['name']) . "</td>";
+      echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['created_at']['seconds'])) . "</td>";
+      echo "<td>
+        <form id='deleteuser' method='POST'>
+        <input type='text' name='del_useridname' value='" . htmlspecialchars($item['id']) . "|" . htmlspecialchars($item['name']) . "' hidden>
+        <input type='text' name='user' value='delete' hidden>
+        <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Delete' onclick='return deleteSWAL(event, this);'>
+        </form>
+        </td>";
+      echo "</tr>";
+    }
+    echo "</table>";
+
+    echo "<hr/>";
+
+    echo "<div>";
+    echo "<b>Create User:</b>";
+    echo "<form id='createuser' method='POST'>";
+    echo "<input type='text' name='username' pattern='[A-Za-z0-9 \-_.]{2,50}' id='username' placeholder='Please enter a Username' required>";
+    echo "<input type='text' name='user' value='create' hidden>";
+    echo "<input type='submit' value='Create' onclick='return createSWAL(event);'>";
+    echo "</form>";
+    echo "</div>";
+
+    echo "<hr/>";
+
+    echo "<div>";
+    echo "<b>Rename User:</b>";
+    echo "<form id='renameuser' method='POST'>";
+    echo "<select name='useridname' id='useridname'>";
+    foreach ($users as $item) {
+      echo "<option value='" . htmlspecialchars($item['id']) . "|" . htmlspecialchars($item['name']) . "'>" . htmlspecialchars($item['name']) . "</option>";
+    }
+    echo "</select>";
+    echo "<input type='text' name='newusername' pattern='[A-Za-z0-9 \-_.]{2,50}' id='newusername' placeholder='Please enter the new user name' required>";
+    echo "<input type='text' name='user' value='rename' hidden>";
+    echo "<input type='submit' value='Rename' onclick='return renameuserSWAL(event, this);'>";
+    echo "</form>";
+    echo "</div>";
   }
-  echo "</table>";
-
-  echo "<hr/>";
-
-  echo "<div>";
-  echo "<b>Create User:</b>";
-  echo "<form id='createuser' method='POST'>";
-  echo "<input type='text' name='username' pattern='[A-Za-z0-9 \-_.]{2,50}' id='username' placeholder='Please enter a Username' required>";
-  echo "<input type='text' name='user' value='create' hidden>";
-  echo "<input type='submit' value='Create' onclick='return createSWAL(event);'>";
-  echo "</form>";
-  echo "</div>";
-
-  echo "<hr/>";
-
-  echo "<div>";
-  echo "<b>Rename User:</b>";
-  echo "<form id='renameuser' method='POST'>";
-  echo "<select name='useridname' id='useridname'>";
-  foreach ($users as $item) {
-    echo "<option value='" . htmlspecialchars($item['id']) . "|" . htmlspecialchars($item['name']) . "'>" . htmlspecialchars($item['name']) . "</option>";
-  }
-  echo "</select>";
-  echo "<input type='text' name='newusername' pattern='[A-Za-z0-9 \-_.]{2,50}' id='newusername' placeholder='Please enter the new user name' required>";
-  echo "<input type='text' name='user' value='rename' hidden>";
-  echo "<input type='submit' value='Rename' onclick='return renameuserSWAL(event, this);'>";
-  echo "</form>";
-  echo "</div>";
 } else {
+  $users = null;
   if ($plugin_settings['METHOD'] == 'local') {
     echo "<p><b>Please double check the specified Headscale container name and make sure the container is running, can't find any users!</b></p>";
   } elseif ($plugin_settings['METHOD'] == 'api') {

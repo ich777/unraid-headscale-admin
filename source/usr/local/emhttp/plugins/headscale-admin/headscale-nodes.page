@@ -3,88 +3,91 @@ Title="Nodes"
 Tag="laptop"
 ---
 <?php
-$nodes = json_decode($headscale_nodes, true);
-if (is_array($nodes)) {
-  echo "<table>";
-  echo "<tr>";
-  echo "<th>ID</th>";
-  echo "<th>Hostname</th>";
-  echo "<th>Name</th>";
-  echo "<th>Machine Key</th>";
-  echo "<th>Node Key</th>";
-  echo "<th>User</th>";
-  echo "<th>IP addresses</th>";
-  echo "<th>Valid Tags</th>";
-  echo "<th>Last Seen</th>";
-  echo "<th>Expiration</th>";
-  echo "<th>Expired</th>";
-  echo "<th>Connected</th>";
-  echo "<th>Expire Node</th>";
-  echo "<th>Delete Node</th>";
-  echo "</tr>";
-
-  foreach ($nodes as $item) {
+if (isset($headscale_nodes)) {
+  $nodes = json_decode($headscale_nodes, true);
+  if (is_array($nodes)) {
+    echo "<table>";
     echo "<tr>";
-    echo "<td>" . htmlspecialchars($item['id']) . "</td>";
-    echo "<td>" . htmlspecialchars($item['name']) . "</td>";
-    echo "<td>" . htmlspecialchars($item['given_name']) . "</td>";
-    echo "<td>[" . substr(str_replace("mkey:", "", htmlspecialchars($item['machine_key'])),  0, 5) . "...]</td>";
-    echo "<td>[" . substr(str_replace("nodekey:", "", htmlspecialchars($item['node_key'])),  0, 5) . "...]</td>";
-    echo "<td>" . htmlspecialchars($item['user']['name']) . "</td>";
-    echo "<td>";
-    foreach ($item["ip_addresses"] as $ip) {
-      echo $ip . "<br/>";
-    }
-    echo "</td>";
-    echo "<td>";
-    if (isset($item["valid_tags"]) && is_array($item["valid_tags"]) && !empty($item["valid_tags"])) {
-      foreach ($item["valid_tags"] as $tag) {
-        if (!empty($tag)) {
-          echo htmlspecialchars($tag);
-        } else {
-          echo "-";
-        }
-      }
-    } else {
-      echo "-";
-    }
-    echo "</td>";
-    echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item["last_seen"]["seconds"])) . "</td>";
-    echo "<td class='" . (isset($item['expiration']) && $item['expiration'] ? "text-yellow" : "") . "'>" . (isset($item['expiration']) && $item['expiration'] ? date('Y-m-d H:i:s', htmlspecialchars($item['expiration']["seconds"])) : "N/A") . "</td>";
-    echo "<td class='";
-    if (isset($item['expiry']['seconds'])) {
-      $currentTime = time();
-      $expiryTime = $item['expiry']['seconds'];
-      if ($expiryTime > $currentTime) {
-        echo "text-green'>" . date('Y-m-d H:i:s', htmlspecialchars($expiryTime));
-      } elseif ($expiryTime < $currentTime) {
-        echo "text-red'>" . date('Y-m-d H:i:s', htmlspecialchars($expiryTime));
-      }
-    } else {
-      echo "text-green'>No";
-    }
-    echo "</td>";
-    echo "<td class='" . ($item['online'] == 1 ? "text-green" : "text-red") . "'>" . ($item['online'] == 1 ? "Connected" : "Offline") . "</td>";
-    echo "<td>
-      <form id='expire' method='POST'>
-      <input type='text' name='expire_node_id' value='" . htmlspecialchars($item['id']) . "' hidden>
-      <input type='text' name='expire_node_name' value='" . htmlspecialchars($item['name']) . "' hidden>
-      <input type='text' name='node' value='expire' hidden>
-      <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Expire' onclick='return expirenodeSWAL(event, this);'>
-      </form>
-      </td>";
-    echo "<td>
-      <form id='deletenode' method='POST'>
-      <input type='text' name='del_node_id' value='" . htmlspecialchars($item['id']) . "' hidden>
-      <input type='text' name='del_node_name' value='" . htmlspecialchars($item['name']) . "' hidden>
-      <input type='text' name='node' value='delete' hidden>
-      <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Delete' onclick='return deletenodeSWAL(event, this);'>
-      </form>
-      </td>";
+    echo "<th>ID</th>";
+    echo "<th>Hostname</th>";
+    echo "<th>Name</th>";
+    echo "<th>Machine Key</th>";
+    echo "<th>Node Key</th>";
+    echo "<th>User</th>";
+    echo "<th>IP addresses</th>";
+    echo "<th>Valid Tags</th>";
+    echo "<th>Last Seen</th>";
+    echo "<th>Expiration</th>";
+    echo "<th>Expired</th>";
+    echo "<th>Connected</th>";
+    echo "<th>Expire Node</th>";
+    echo "<th>Delete Node</th>";
     echo "</tr>";
+
+    foreach ($nodes as $item) {
+      echo "<tr>";
+      echo "<td>" . htmlspecialchars($item['id']) . "</td>";
+      echo "<td>" . htmlspecialchars($item['name']) . "</td>";
+      echo "<td>" . htmlspecialchars($item['given_name']) . "</td>";
+      echo "<td>[" . substr(str_replace("mkey:", "", htmlspecialchars($item['machine_key'])),  0, 5) . "...]</td>";
+      echo "<td>[" . substr(str_replace("nodekey:", "", htmlspecialchars($item['node_key'])),  0, 5) . "...]</td>";
+      echo "<td>" . htmlspecialchars($item['user']['name']) . "</td>";
+      echo "<td>";
+      foreach ($item["ip_addresses"] as $ip) {
+        echo $ip . "<br/>";
+      }
+      echo "</td>";
+      echo "<td>";
+      if (isset($item["valid_tags"]) && is_array($item["valid_tags"]) && !empty($item["valid_tags"])) {
+        foreach ($item["valid_tags"] as $tag) {
+          if (!empty($tag)) {
+            echo htmlspecialchars($tag);
+          } else {
+            echo "-";
+          }
+        }
+      } else {
+        echo "-";
+      }
+      echo "</td>";
+      echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item["last_seen"]["seconds"])) . "</td>";
+      echo "<td class='" . (isset($item['expiration']) && $item['expiration'] ? "text-yellow" : "") . "'>" . (isset($item['expiration']) && $item['expiration'] ? date('Y-m-d H:i:s', htmlspecialchars($item['expiration']["seconds"])) : "N/A") . "</td>";
+      echo "<td class='";
+      if (isset($item['expiry']['seconds'])) {
+        $currentTime = time();
+        $expiryTime = $item['expiry']['seconds'];
+        if ($expiryTime > $currentTime) {
+          echo "text-green'>" . date('Y-m-d H:i:s', htmlspecialchars($expiryTime));
+        } elseif ($expiryTime < $currentTime) {
+          echo "text-red'>" . date('Y-m-d H:i:s', htmlspecialchars($expiryTime));
+        }
+      } else {
+        echo "text-green'>No";
+      }
+      echo "</td>";
+      echo "<td class='" . (isset($item['online']) && $item['online'] == 1 ? "text-green" : "text-red") . "'>" . (isset($item['online']) && $item['online'] == 1 ? "Connected" : "Offline") . "</td>";
+      echo "<td>
+        <form id='expire' method='POST'>
+        <input type='text' name='expire_node_id' value='" . htmlspecialchars($item['id']) . "' hidden>
+        <input type='text' name='expire_node_name' value='" . htmlspecialchars($item['name']) . "' hidden>
+        <input type='text' name='node' value='expire' hidden>
+        <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Expire' onclick='return expirenodeSWAL(event, this);'>
+        </form>
+        </td>";
+      echo "<td>
+        <form id='deletenode' method='POST'>
+        <input type='text' name='del_node_id' value='" . htmlspecialchars($item['id']) . "' hidden>
+        <input type='text' name='del_node_name' value='" . htmlspecialchars($item['name']) . "' hidden>
+        <input type='text' name='node' value='delete' hidden>
+        <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Delete' onclick='return deletenodeSWAL(event, this);'>
+        </form>
+        </td>";
+      echo "</tr>";
+    }
+    echo "</table>";
   }
-  echo "</table>";
 } else {
+  $nodes = null;
   echo "<p><b>No Nodes found!</b></p>";
 }
 ?>
@@ -92,7 +95,7 @@ if (is_array($nodes)) {
 <hr/>
 
 <?php
-if (is_array($users)) {
+if (isset($users) && is_array($users)) {
 ?>
 <div>
   <b>Register Node:</b>
@@ -118,7 +121,7 @@ if (is_array($users)) {
 <hr/>
 
 <?php
-if (is_array($nodes)) {
+if (isset($nodes) && is_array($nodes)) {
 ?>
 <div>
   <b>Rename Node:</b>
