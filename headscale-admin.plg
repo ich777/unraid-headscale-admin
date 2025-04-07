@@ -16,7 +16,7 @@
 <CHANGES>
 
 ###2025.04.07
-- Add Restart Container button when plugin is running in local mode
+- Add Restart Container button when plugin is running in local mode to Settings page
 - Fix for missing Create User form for new installations
 
 ###2025.04.04
