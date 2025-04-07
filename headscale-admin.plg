@@ -2,11 +2,11 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name      "headscale-admin">
   <!ENTITY author    "ich777">
-  <!ENTITY version   "2025.04.07">
+  <!ENTITY version   "2025.04.07a">
   <!ENTITY launch    "Settings/headscale-admin">
   <!ENTITY gitURL    "https://github.com/&author;/unraid-&name;/raw/master">
   <!ENTITY pluginURL "&gitURL;/&name;.plg">
-  <!ENTITY md5       "5ba6ba36f43cdddd98550cbda832bf45">
+  <!ENTITY md5       "4dadb4aea91812e50e9e76ef4cb07cf2">
   <!ENTITY plugin    "/boot/config/plugins/&name;">
   <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 ]>
@@ -14,6 +14,9 @@
 <PLUGIN  name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.0" icon="headscale.png" support="https://forums.unraid.net/topic/92865-support-ich777-amd-vendor-reset-coraltpu-hpsahba">
 
 <CHANGES>
+
+###2025.04.07a
+- More fixes for php warnings when API mode is used
 
 ###2025.04.07
 - Add Restart Container button when plugin is running in local mode to Settings page
