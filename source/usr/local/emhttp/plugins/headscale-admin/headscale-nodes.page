@@ -85,6 +85,8 @@ if (isset($headscale_nodes)) {
       echo "</tr>";
     }
     echo "</table>";
+  } else {
+    echo "<p><b>No Nodes found!</b></p>";
   }
 } else {
   $nodes = null;

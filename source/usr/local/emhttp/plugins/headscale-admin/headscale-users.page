@@ -252,6 +252,17 @@ if (isset($headscale_users)) {
     echo "<input type='submit' value='Rename' onclick='return renameuserSWAL(event, this);'>";
     echo "</form>";
     echo "</div>";
+  } else {
+    echo "<div>";
+    echo "<p><b>No user found, start by creating a user</b></p>";
+    echo "<hr/>";
+    echo "<b>Create User:</b>";
+    echo "<form id='createuser' method='POST'>";
+    echo "<input type='text' name='username' pattern='[A-Za-z0-9 \-_.]{2,50}' id='username' placeholder='Please enter a Username' required>";
+    echo "<input type='text' name='user' value='create' hidden>";
+    echo "<input type='submit' value='Create' onclick='return createSWAL(event);'>";
+    echo "</form>";
+    echo "</div>";
   }
 } else {
   $users = null;

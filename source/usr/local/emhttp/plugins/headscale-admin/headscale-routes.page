@@ -58,6 +58,8 @@ if (isset($headscale_routes)) {
       echo "</tr>";
     }
     echo "</table>";
+  } else {
+    echo "<p><b>No Routes found!</b></p>";
   }
 } else {
   $routes = null;

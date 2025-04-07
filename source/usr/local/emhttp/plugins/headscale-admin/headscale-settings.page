@@ -16,12 +16,18 @@ echo "</form>";
 echo "<hr/>";
 
 if ($plugin_settings['METHOD'] == 'local') {
-  echo "<b>Change Container name:</b>";
+  echo "<b>Change Container name:</b><br/>";
   echo "<form method='POST'>";
   echo "<input type='text' name='containername' id='containername' pattern='[A-Za-z0-9 \-_.]{2,50}' placeholder='headscale' value='" . $headscale_container_name . "' required>";
   echo "<input type='text' name='settings' value='change_container_name' hidden>";
   echo "<button type='submit'>Set</button>";
   echo "</form>";
+  if (isset($headscale_users)) {
+    echo "<form style='float: right;' method='POST'>";
+    echo "<input type='text' name='settings' value='restart_container' hidden>";
+    echo "<button type='submit'>Restart Container</button>";
+    echo "</form>";
+  }
 } elseif ($plugin_settings['METHOD'] == 'api') {
   echo "<b>Change API settings:</b>";
   echo "<form method='POST'>";
@@ -48,6 +54,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   } elseif (isset($_POST['settings']) && $_POST['settings'] === 'change_api_settings') {
     shell_exec('sed -i "/^URL=/c\\URL=' . htmlspecialchars($_POST['api_url']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
     shell_exec('sed -i "/^API_KEY=/c\\API_KEY=' . htmlspecialchars($_POST['api_key']) . '" "/boot/config/plugins/headscale-admin/settings.cfg"');
+    echo '<script>parent.window.location.reload();</script>';
+  } elseif (isset($_POST['settings']) && $_POST['settings'] === 'restart_container') {
+    shell_exec('docker container restart ' . $plugin_settings['CONTAINER_NAME']);
     echo '<script>parent.window.location.reload();</script>';
   }
 }
