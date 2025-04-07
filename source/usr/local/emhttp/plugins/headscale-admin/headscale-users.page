@@ -100,7 +100,7 @@ if ($plugin_settings['METHOD'] == 'local') {
     }
   }
 
-  if (isset($headscale_users_response)) {
+  if (isset($headscale_users_response) && !empty($headscale_users_response['users'])) {
     foreach ($headscale_users_response['users'] as $user) {
       $normalizedUser = [
         "id" => (int) $user["id"],
@@ -110,11 +110,13 @@ if ($plugin_settings['METHOD'] == 'local') {
       $headscale_users[] = $normalizedUser;
     }
     $headscale_users = json_encode($headscale_users, JSON_PRETTY_PRINT);
+  } elseif (isset($headscale_users_response) && empty($headscale_users_response['users'])) {
+    $headscale_users = "empty";
   } else {
     $headscale_users = null;
   }
 
-  if (isset($headscale_nodes_response)) {
+  if (isset($headscale_nodes_response) && !empty($headscale_nodes_response['nodes'])) {
     foreach ($headscale_nodes_response['nodes'] as $node) {
       $normalizedNode = [
         "id" => (int)$node["id"],
@@ -142,7 +144,7 @@ if ($plugin_settings['METHOD'] == 'local') {
     $headscale_nodes = null;
   }
 
-  if (isset($headscale_routes_response)) {
+  if (isset($headscale_routes_response) && !empty($headscale_routes_response['routes'])) {
     foreach ($headscale_routes_response['routes'] as $route) {
     $normalizedRoute = [
       "id" => (int)$route["id"],
@@ -175,7 +177,7 @@ if ($plugin_settings['METHOD'] == 'local') {
     $headscale_routes = null;
   }
 
-  if (isset($headscale_policies_response)) {
+  if (isset($headscale_policies_response) && !empty($headscale_policies_response['details'])) {
     $headscale_policies = $headscale_policies_response['policy'];
   } else {
     $headscale_policies = null;
