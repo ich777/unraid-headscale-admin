@@ -3,8 +3,8 @@ Title="Routes"
 Tag="exchange"
 ---
 <?php
-if (isset($headscale_routes)) {
-  $routes = json_decode($headscale_routes, true);
+if (isset($headscale_routes_old)) {
+  $routes = json_decode($headscale_routes_old, true);
   if (is_array($routes)) {
     echo "<table>";
     echo "<tr>";
@@ -32,17 +32,17 @@ if (isset($headscale_routes)) {
       echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['updated_at']['seconds'])) . "</td>";
       echo "<td>";
       if ($item['enabled'] == 1) {
-        echo "<form id='disable' method='POST'>
+        echo "<form id='disable_old' method='POST'>
         <input type='text' name='disable_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
         <input type='text' name='disable_route_name' value='" . htmlspecialchars($item['node']['name']) . "' hidden>
-        <input type='text' name='route' value='disable' hidden>
+        <input type='text' name='route' value='disable_old' hidden>
         <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Disable' onclick='return disablerouteSWAL(event, this);'>
         </form>";
       } else {
-        echo "<form id='enable' method='POST'>
+        echo "<form id='enable_old' method='POST'>
         <input type='text' name='enable_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
         <input type='text' name='enable_route_name' value='" . htmlspecialchars($item['node']['name']) . "' hidden>
-        <input type='text' name='route' value='enable' hidden>
+        <input type='text' name='route' value='enable_old' hidden>
         <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Enable' onclick='return enablerouteSWAL(event, this);'>
         </form>";
       }
@@ -58,8 +58,81 @@ if (isset($headscale_routes)) {
       echo "</tr>";
     }
     echo "</table>";
-  } else {
-    echo "<p><b>No Routes found!</b></p>";
+  }
+} else if (isset($headscale_routes_new)) {
+  $routes = json_decode($headscale_routes_new, true);
+  if (is_array($routes)) {
+    echo "<table>";
+    echo "<tr>";
+    echo "<th>ID</th>";
+    echo "<th>Name</th>";
+    echo "<th>Enabled</th>";
+    echo "<th>Approved</th>";
+    echo "<th>Available</th>";
+    echo "<th>Serving (Primary)</th>";
+    echo "<th>Created</th>";
+    echo "<th>Enable/Disable</th>";
+    echo "</tr>";
+
+    foreach ($routes as $item) {
+      if (isset($item["available_routes"]) && is_array($item["available_routes"]) && !empty($item["available_routes"])) {
+        echo "<tr>";
+        echo "<td>" . htmlspecialchars($item['id']) . "</td>";
+        echo "<td>" . htmlspecialchars($item['name']) . "</td>";
+        if (isset($item["approved_routes"]) && is_array($item["approved_routes"]) && !empty($item["approved_routes"])) {
+          echo "<td class='text-green'>true</td>";
+          echo "<td>";
+          foreach ($item["approved_routes"] as $approved_route) {
+            if (!empty($approved_route)) {
+              echo htmlspecialchars($approved_route) . "<br/>";
+            }
+          }
+          echo "</td>";
+        } else {
+          echo "<td class='text-red'>false</td>";
+          echo "<td>-</td>";
+        }
+        echo "<td>";
+        foreach ($item["available_routes"] as $available_route) {
+          if (!empty($available_route)) {
+            echo htmlspecialchars($available_route) . "<br/>";
+          }
+        }
+        echo "</td>";
+        echo "<td>";
+        if (isset($item["subnet_routes"]) && is_array($item["subnet_routes"]) && !empty($item["subnet_routes"])) {
+          foreach ($item["subnet_routes"] as $subnet_route) {
+            if (!empty($subnet_route)) {
+              echo htmlspecialchars($subnet_route) . "<br/>";
+            }
+          }
+        } else {
+          echo "-";
+        }
+        echo "</td>";
+        echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item['created_at']['seconds'])) . "</td>";
+        echo "<td>";
+        if (isset($item["approved_routes"]) && is_array($item["approved_routes"]) && !empty($item["approved_routes"])) {
+          echo "<form id='disable_new' method='POST'>
+          <input type='text' name='disable_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
+          <input type='text' name='disable_route_name' value='" . htmlspecialchars($item['name']) . "' hidden>
+          <input type='text' name='route' value='disable_new' hidden>
+          <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Disable' onclick='return disablerouteSWAL(event, this);'>
+          </form>";
+        } else {
+          echo "<form id='enable_new' method='POST'>
+          <input type='text' name='enable_route_id' value='" . htmlspecialchars($item['id']) . "' hidden>
+          <input type='text' name='enable_routes' value='" . htmlspecialchars(implode(',', $item["available_routes"])) . "' hidden>
+          <input type='text' name='enable_route_name' value='" . htmlspecialchars($item['name']) . "' hidden>
+          <input type='text' name='route' value='enable_new' hidden>
+          <input style='padding: 0px; margin: 0px; color: gray;' type='submit' value='Enable' onclick='return enablerouteSWAL(event, this);'>
+          </form>";
+        }
+        echo "</td></tr>";
+        
+      }
+    }
+    echo "</table>";
   }
 } else {
   $routes = null;
@@ -131,7 +204,7 @@ function deleterouteSWAL(event, button) {
 
 <?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if (isset($_POST['route']) && $_POST['route'] === 'enable') {
+  if (isset($_POST['route']) && $_POST['route'] === 'enable_old') {
     if (isset($_POST['enable_route_id'])) {
       if ($plugin_settings['METHOD'] == 'local') {
         shell_exec($headscale_exec . "routes enable --force --route " . escapeshellarg($_POST['enable_route_id']));
@@ -148,7 +221,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
       echo '<script>parent.window.location.reload();</script>';
     }
-  } elseif (isset($_POST['route']) && $_POST['route'] === 'disable') {
+  } elseif (isset($_POST['route']) && $_POST['route'] === 'enable_new') {
+    if (isset($_POST['enable_route_id'])) {
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "nodes approve-routes --force --identifier " . escapeshellarg($_POST['enable_route_id']) . " --routes " . escapeshellarg($_POST['enable_routes']));
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $routes = explode(',', $_POST['enable_routes']);
+        $post_data = [
+          "routes" => $routes
+        ];
+        $json_data = json_encode($post_data);
+        $curl_opts = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json'
+          ]
+        ];
+        $endpoint = "node/" . $_POST['enable_route_id'] . "/approve_routes"; 
+        curl_send($headscale_url, $endpoint, "POST", $curl_opts, $post_data);
+      }
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  } elseif (isset($_POST['route']) && $_POST['route'] === 'disable_old') {
     if (isset($_POST['disable_route_id'])) {
       if ($plugin_settings['METHOD'] == 'local') {
         shell_exec($headscale_exec . "routes disable --force --route " . escapeshellarg($_POST['disable_route_id']));
@@ -161,6 +256,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           ]
         ];
         $endpoint = "routes/" . $_POST['disable_route_id'] . "/disable"; 
+        curl_send($headscale_url, $endpoint, "POST", $curl_opts);
+      }
+      echo '<script>parent.window.location.reload();</script>';
+    }
+  } elseif (isset($_POST['route']) && $_POST['route'] === 'disable_new') {
+    if (isset($_POST['disable_route_id'])) {
+      if ($plugin_settings['METHOD'] == 'local') {
+        shell_exec($headscale_exec . "nodes approve-routes --force --identifier " . escapeshellarg($_POST['disable_route_id']) . " --routes ''");
+      } elseif ($plugin_settings['METHOD'] == 'api') {
+        $curl_opts = [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $headscale_apikey,
+            'accept: application/json'
+          ]
+        ];
+        $endpoint = "node/" . $_POST['disable_route_id'] . "/approve_routes"; 
         curl_send($headscale_url, $endpoint, "POST", $curl_opts);
       }
       echo '<script>parent.window.location.reload();</script>';

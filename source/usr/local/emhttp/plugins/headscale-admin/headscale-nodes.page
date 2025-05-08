@@ -50,7 +50,11 @@ if (isset($headscale_nodes)) {
         echo "-";
       }
       echo "</td>";
-      echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item["last_seen"]["seconds"])) . "</td>";
+      if (isset($item["last_seen"])) {
+        echo "<td>" . date('Y-m-d H:i:s', htmlspecialchars($item["last_seen"]["seconds"])) . "</td>";
+      } else {
+        echo "<td>N/A</td>";
+      }
       echo "<td class='" . (isset($item['expiration']) && $item['expiration'] ? "text-yellow" : "") . "'>" . (isset($item['expiration']) && $item['expiration'] ? date('Y-m-d H:i:s', htmlspecialchars($item['expiration']["seconds"])) : "N/A") . "</td>";
       echo "<td class='";
       if (isset($item['expiry']['seconds'])) {
@@ -172,9 +176,9 @@ if (isset($nodes) && is_array($nodes)) {
     echo "</select>";
   ?>
   <?php
-    echo "<select name='newnodeuser' id='newnodeuser'>";
+    echo "<select name='newnodeuserid' id='newnodeuserid'>";
     foreach ($users as $item) {
-      echo "<option value='" . htmlspecialchars($item['name']) . "'>" . htmlspecialchars($item['name']) . "</option>";
+      echo "<option value='" . htmlspecialchars($item['id']) . "|" . htmlspecialchars($item['name']) . "'>" . htmlspecialchars($item['name']) . "</option>";
     }
     echo "</select>";
   ?>
@@ -280,10 +284,12 @@ function movenodeSWAL(event, button) {
   event.preventDefault();
   const formElement = button.closest('form');
   let nodeidname = formElement.querySelector('select[name="nodeidname"]').value;
-  let newnodeuser = formElement.querySelector('select[name="newnodeuser"]').value;
+  let newnodeuserid = formElement.querySelector('select[name="newnodeuserid"]').value;
 
-  let parts = nodeidname.split('|');
-  let nodename = parts[1];
+  let old_parts = nodeidname.split('|');
+  let nodename = old_parts[1];
+  let new_parts = newnodeuserid.split('|');
+  let newnodeuser = new_parts[1];
 
   swal({
     title: "Move Node",
@@ -405,14 +411,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       echo '<script>parent.window.location.reload();</script>';
     }
   } elseif (isset($_POST['node']) && $_POST['node'] === 'move') {
-    if (isset($_POST['newnodeuser'])) {
+    if (isset($_POST['newnodeuserid'])) {
+      list($newnodeid, $newnodename) = explode('|', $_POST['newnodeuserid']);
       list($nodeid, $nodename) = explode('|', $_POST['nodeidname']);
       if ($plugin_settings['METHOD'] == 'local') {
-        shell_exec($headscale_exec . "nodes move --force --identifier ". escapeshellarg($nodeid) . " --user " . escapeshellarg($_POST['newnodeuser']));
+        if ($headscale_0_26) {
+          shell_exec($headscale_exec . "nodes move --force --identifier ". escapeshellarg($nodeid) . " --user " . $newnodeid);
+        } else {
+          shell_exec($headscale_exec . "nodes move --force --identifier ". escapeshellarg($nodeid) . " --user " . $newnodename);
+        }
       } elseif ($plugin_settings['METHOD'] == 'api') {
-        $post_data = [
-          "user" => $_POST['newnodeuser']
-        ];
+        if ($headscale_0_26) {
+          $post_data = [
+            "user" => $newnodeid
+          ];
+        } else {
+          $post_data = [
+            "user" => $newnodename
+          ];
+        }
         $curl_opts_post = [
           CURLOPT_RETURNTRANSFER => true,
           CURLOPT_HTTPHEADER => [

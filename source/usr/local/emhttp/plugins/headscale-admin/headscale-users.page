@@ -38,12 +38,20 @@ if ($plugin_settings['METHOD'] == 'local') {
   $headscale_exec = "docker exec \"" .$headscale_container_name . "\" headscale ";
   $headscale_users = shell_exec($headscale_cmd . "users list");
   $headscale_nodes = shell_exec($headscale_cmd . "nodes list");
-  $headscale_routes = shell_exec($headscale_cmd . "routes list");
+  $headscale_routes_new = shell_exec($headscale_cmd . "nodes list-routes");
+  // change for legacy routes
+  if (!isset($headscale_routes_new)) {
+    $headscale_routes_old = shell_exec($headscale_cmd . "routes list");
+    $headscale_0_26 = false;
+  } else {
+    $headscale_0_26 = true;
+  }
   $headscale_policies = shell_exec($headscale_cmd . "policy get");
 } elseif ($plugin_settings['METHOD'] == 'api') {
   $headscale_url = $plugin_settings['URL'] . "/api/v1";
   $headscale_apikey = $plugin_settings['API_KEY'];
   $headscale_endpoints = [ "user", "node", "routes", "policy"];
+  $headscale_0_26 = false;
 
   $curl_opts = [
     CURLOPT_RETURNTRANSFER => true,
@@ -85,6 +93,10 @@ if ($plugin_settings['METHOD'] == 'local') {
         $curl_routes_response = curl_exec($ch);
         if (isset($curl_routes_response)) {
           $headscale_routes_response = json_decode($curl_routes_response, true);
+          if (isset($headscale_routes_response) && ($headscale_routes_response['message'] === 'Not Found')) {
+            $headscale_routes_response = null;
+            $headscale_0_26 = true;
+          }
         } else {
           $headscale_routes_response = null;
         }
@@ -130,12 +142,15 @@ if ($plugin_settings['METHOD'] == 'local') {
           "name" => $node["user"]["name"],
           "created_at" => convertToSeconds($node["user"]["createdAt"])
         ],
-        "last_seen" => convertToSeconds($node["lastSeen"]),
-        "created_at" => convertToSeconds($node["createdAt"]),
+        "last_seen" => isset($node['lastSeen']) ? convertToSeconds($node["lastSeen"]) : null,
+        "created_at" => isset($node['createdAt']) ? convertToSeconds($node["createdAt"]) : null,
         "expiry" => isset($node['expiry']) ? convertToSeconds($node['expiry']) : null,
         "valid_tags" => isset($node['validTags']) ? $node['validTags'] : null,
         "given_name" => $node["givenName"],
-        "online" => $node["online"]
+        "online" => $node["online"],
+        "approved_routes" => isset($node['approvedRoutes']) ? $node['approvedRoutes'] : [],
+        "available_routes" => isset($node['availableRoutes']) ? $node['availableRoutes'] : [],
+        "subnet_routes" => isset($node['subnetRoutes']) ? $node['subnetRoutes'] : []
       ];
       $headscale_nodes[] = $normalizedNode;
     }
@@ -144,7 +159,7 @@ if ($plugin_settings['METHOD'] == 'local') {
     $headscale_nodes = null;
   }
 
-  if (isset($headscale_routes_response) && !empty($headscale_routes_response['routes'])) {
+  if (isset($headscale_routes_response) && !empty($headscale_routes_response['routes']) && !$headscale_0_26) {
     foreach ($headscale_routes_response['routes'] as $route) {
     $normalizedRoute = [
       "id" => (int)$route["id"],
@@ -172,12 +187,22 @@ if ($plugin_settings['METHOD'] == 'local') {
     ];
     $headscale_routes[] = $normalizedRoute;
     }
-    $headscale_routes =  json_encode($headscale_routes, JSON_PRETTY_PRINT);
+    $headscale_routes_old =  json_encode($headscale_routes, JSON_PRETTY_PRINT);
   } else {
-    $headscale_routes = null;
+    $headscale_routes_old = null;
   }
 
-  if (isset($headscale_policies_response) && !empty($headscale_policies_response['details'])) {
+  if ($headscale_0_26) {
+    if (isset($headscale_nodes_response) && !empty($headscale_nodes_response['nodes'])) {
+      $headscale_routes_new = $headscale_nodes;
+    } else {
+      $headscale_routes_new = null;
+    }
+  } else {
+    $headscale_routes_new = null;
+  }
+
+if (isset($headscale_policies_response) && (isset($headscale_policies_response['details']) && !empty($headscale_policies_response['details']) || isset($headscale_policies_response['policy']) && !empty($headscale_policies_response['policy']))) {
     $headscale_policies = $headscale_policies_response['policy'];
   } else {
     $headscale_policies = null;
