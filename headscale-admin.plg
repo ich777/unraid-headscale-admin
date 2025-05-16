@@ -2,11 +2,11 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name      "headscale-admin">
   <!ENTITY author    "ich777">
-  <!ENTITY version   "2025.05.08">
+  <!ENTITY version   "2025.05.16">
   <!ENTITY launch    "Settings/headscale-admin">
   <!ENTITY gitURL    "https://github.com/&author;/unraid-&name;/raw/master">
   <!ENTITY pluginURL "&gitURL;/&name;.plg">
-  <!ENTITY md5       "18b44313435232bd8adbd7e2fda92649">
+  <!ENTITY md5       "803a75590af5c82e8441e3b04a61d17a">
   <!ENTITY plugin    "/boot/config/plugins/&name;">
   <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 ]>
@@ -14,6 +14,9 @@
 <PLUGIN  name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.0" icon="headscale.png" support="https://forums.unraid.net/topic/92865-support-ich777-amd-vendor-reset-coraltpu-hpsahba">
 
 <CHANGES>
+
+###2025.05.16
+- Reduce line spacing for IP addresses on the Nodes and Routes pages
 
 ###2025.05.08
 - Compatibility update for Headscale v0.26.0-beta.1
