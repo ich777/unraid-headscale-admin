@@ -32,7 +32,7 @@ if (isset($headscale_nodes)) {
       echo "<td>[" . substr(str_replace("mkey:", "", htmlspecialchars($item['machine_key'])),  0, 5) . "...]</td>";
       echo "<td>[" . substr(str_replace("nodekey:", "", htmlspecialchars($item['node_key'])),  0, 5) . "...]</td>";
       echo "<td>" . htmlspecialchars($item['user']['name']) . "</td>";
-      echo "<td>";
+      echo "<td style='line-height:1.2;'>";
       foreach ($item["ip_addresses"] as $ip) {
         echo $ip . "<br/>";
       }

@@ -81,7 +81,7 @@ if (isset($headscale_routes_old)) {
         echo "<td>" . htmlspecialchars($item['name']) . "</td>";
         if (isset($item["approved_routes"]) && is_array($item["approved_routes"]) && !empty($item["approved_routes"])) {
           echo "<td class='text-green'>true</td>";
-          echo "<td>";
+          echo "<td style='line-height:1.2;'>";
           foreach ($item["approved_routes"] as $approved_route) {
             if (!empty($approved_route)) {
               echo htmlspecialchars($approved_route) . "<br/>";
@@ -92,14 +92,14 @@ if (isset($headscale_routes_old)) {
           echo "<td class='text-red'>false</td>";
           echo "<td>-</td>";
         }
-        echo "<td>";
+        echo "<td style='line-height:1.2;'>";
         foreach ($item["available_routes"] as $available_route) {
           if (!empty($available_route)) {
             echo htmlspecialchars($available_route) . "<br/>";
           }
         }
         echo "</td>";
-        echo "<td>";
+        echo "<td style='line-height:1.2;'>";
         if (isset($item["subnet_routes"]) && is_array($item["subnet_routes"]) && !empty($item["subnet_routes"])) {
           foreach ($item["subnet_routes"] as $subnet_route) {
             if (!empty($subnet_route)) {
